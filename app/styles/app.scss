@@ -1,0 +1,49 @@
+@import 'ember-paper';
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+
+.flextable {
+  font-family: "Arial", Arial, Helvetica, sans-serif;
+  font-size:12px;
+  border-collapse: collapse;
+  width: 50%;
+}
+
+.flextable td, .revanme th, .revname tr{
+  border: 1px solid #ddd;
+  padding: 6px;
+  background-color: white;
+}
+
+.flextable th {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  text-align: left;
+}
+
+.upload label {
+  background: #34495e;
+  padding: 10px;
+  color: white;
+  border-radius: 5px;
+}
+
+.x-file--input:focus + label,
+.x-file--input + label:hover {
+  /* Apply your own hover state */
+  background-color: #2C3E50;
+}

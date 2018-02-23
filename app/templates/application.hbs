@@ -1,5 +1,30 @@
-{{!-- The following component displays Ember's default welcome message. --}}
-{{welcome-page}}
-{{!-- Feel free to remove this! --}}
+{{! without contextual components }}
+{{#if (not-eq currentPath 'print-review')}}
+  {{#paper-toolbar}}
+    {{#paper-toolbar-tools}}
+      {{#paper-button iconButton=true onClick=(action "menu")}}
+        {{paper-icon "menu"}}
+        {{#paper-tooltip}}
+          Main Menu
+        {{/paper-tooltip}}
+      {{/paper-button}}
+      <H1>Nexonia Tools (c)2018 Shahman
+      </H1>
+      <span class="flex"></span>
+      {{#paper-button iconButton=true onClick=(action 'goto' "find")}}
+        {{paper-icon "search"}}
+        {{#paper-tooltip}}
+          Find
+        {{/paper-tooltip}}
+      {{/paper-button}}
+      {{#paper-button iconButton=true onClick=(action "more")}}
+        {{paper-icon "more_vert"}}
+        {{#paper-tooltip}}
+          More Options
+        {{/paper-tooltip}}
+      {{/paper-button}}
 
+    {{/paper-toolbar-tools}}
+  {{/paper-toolbar}}
+{{/if}}
 {{outlet}}
