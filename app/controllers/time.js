@@ -4,25 +4,41 @@ import {getToday, getTodaySortable, truncText} from '../utils/functions';
 export default Ember.Controller.extend({
   processed:'',
   debug:false,
+  timeData: '',
+  refresh:false,
+  searchWeek:'02/19/2018 - 02/25/2018',
+  weekList: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
+    '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
+    '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
+  ],
+  update: Ember.computed('searchWeek', function () {
+    this.send('filter');
+    return this.get('searchWeek');
+  }),
   actions: {
-    import(data){
-      //customer,project,date,name,mgr,task,billable,status,memo,hours,type
-      let customer = '';
+    loadData(data){
+      this.set('timeData',data);
+      this.send('filter');
+    },
+    filter(){
+      //unit,name,agency,project,emp_type,emp_band,date,billable,status,
+      // memo,duration,mgr,rej_comments,run_date1,run_date2,create_date,week,last_edit
+      let self=this;
+      let data=this.get('timeData');
+
+      let unit = '';
+      let name='';
       let project = '';
       let date = '';
-      let name='';
-      let mgr = '';
-      let task = '';
       let billable = '';
       let status = '';
       let memo = '';
       let hours = '';
-      let type = '';
-      let dept='';
+      let mgr = '';
+      let week = '';
 
       /// For Report
-      let flexEarned={};
-      let flexUsed={};
+      let hoursWorked={};
       let nameList={};
       let mgrList={};
       let mgrLookup={};
@@ -48,45 +64,66 @@ export default Ember.Controller.extend({
         let importData = line.split('^');  //split on <^>
         let i = 0;  // data field count
 
-        // Read [0customer,1project,2date,3name,4mgr,5task,6billable,7status,8memo,9hours,10dept,11type]
+        // Read "0Unit","1Name","2Agency","3Project","4Emp Type","5Emp Band","6Date","7Billable","8Status",
+        // "9Memo","10Duration","11Mgr","12Rejection Comment","13(1)Run Date ","14(2)Run Date ",
+        // "15Creation Date","16Week","17Last Edit Date"
+
         importData.forEach(function (item) {
           item=item.trim();
           item = item.replace(/, /g,"_"); //replace <,>with <_>
           if (i === 0) {
-            customer = item;
+            unit = item;
           }
           else if (i === 1) {
-            project = item;
-          }
-          else if (i === 2) {
-            date = item;
-          }
-          else if (i === 3) {
             name = item;
           }
+          else if (i === 2) {
+            //agency
+          }
+          else if (i === 3) {
+            project = item;
+          }
           else if (i === 4) {
-            mgr = item;
+            //emp_type;
           }
           else if (i === 5) {
-            task = item;
+            //emp_band;
           }
           else if (i === 6) {
-            billable= item;
+            date= item;
           }
           else if (i === 7) {
-            status = item;
+            billable = item;
           }
           else if (i === 8) {
-            memo = item;
+            status = item;
           }
           else if (i === 9) {
-            hours = item;
+            memo = item;
           }
           else if (i === 10) {
-            dept = item;
+            hours = item;
           }
           else if (i === 11) {
-            type = item;
+            mgr = item;
+          }
+          else if (i === 12) {
+            //rej comments
+          }
+          else if (i === 13) {
+            //export date 1
+          }
+          else if (i === 14) {
+            //export date 2
+          }
+          else if (i === 15) {
+            //creation date
+          }
+          else if (i === 16) {
+            week = item;
+          }
+          else if (i === 17) {
+            //last edit
           }
 
           i++;
@@ -95,25 +132,23 @@ export default Ember.Controller.extend({
         if (name==='User') header=true;
 
         // Create Record if not matched
-        if (!header) {
+        if (!header && week===self.get('searchWeek') && project !=='~FXearned - Flex Time Earned') {
           if (count<=10) {
-            str2 = str2 + count + ` ADDED: ${name},${project},${date},${hours},${mgr}\n`;
+            str2 = str2 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
           }
-          str1 = str1 + count + ` ADDED: ${name},${project},${date},${hours},${mgr}\n`;
+          str1 = str1 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
           if (count===1){
-            strDetail=strDetail+'FLEX TIME IMPORT DETAIL:\n';
-            strDetail=strDetail+'CUSTOMER: '+customer+'\n';
+            strDetail=strDetail+'TIMECARD IMPORT DETAIL:\n';
+            strDetail=strDetail+'UNIT: '+unit+'\n';
+            strDetail=strDetail+'NAME: '+name+'\n';
             strDetail=strDetail+'PROJECT: '+project+'\n';
             strDetail=strDetail+'DATE: '+date+'\n';
-            strDetail=strDetail+'NAME: '+name+'\n';
-            strDetail=strDetail+'MGR: '+mgr+'\n';
-            strDetail=strDetail+'TASK: '+task+'\n';
             strDetail=strDetail+'BILLABLE: '+billable+'\n';
             strDetail=strDetail+'STATUS: '+status+'\n';
             strDetail=strDetail+'MEMO: '+memo+'\n';
             strDetail=strDetail+'HOURS: '+hours+'\n';
-            strDetail=strDetail+'DEPT: '+dept+'\n';
-            strDetail=strDetail+'TYPE: '+type+'\n';
+            strDetail=strDetail+'MGR: '+mgr+'\n';
+            strDetail=strDetail+'WEEK: '+week+'\n';
           }
           count++;
 
@@ -122,49 +157,42 @@ export default Ember.Controller.extend({
           mgrList[mgr]=mgr;
           mgrLookup[name]=mgr;
 
-          if (project==='~FXearned - Flex Time Earned') {
-            addVal(flexEarned,name,hours);
-          }
-          else if (project==='~FXused - Flex Time Used') {
-            addVal(flexUsed,name,hours);
-          }
+          addVal(hoursWorked,name,hours);
         }
       });
       if (this.get('debug')) alert(strDetail);
       this.set('processed',str1);
 
       // Final List
-      let report='<h2>FLEX TIME REPORT '+getToday()+'</h2>';
+      let report='<h2>TIMECARD REPORT '+getToday()+' [week: '+self.get('searchWeek')+']</h2>';
       Object.keys(mgrList).forEach(function(mgr) {
         //report=report+'<b>Manager: '+mgr+'</b><br>';
         report=report+'<table style="width:50%">';
         report=report+'<tr>'+'<th style="width:30%">'+'Manager: '+mgr+'</th>';
-        report=report+'<th style="width:10%">NET</th>';
-        report=report+'<th style="width:10%">EARNED</th>';
-        report=report+'<th style="width:10%">USED</th>';
+        report=report+'<th style="width:10%">HRS WORKED</th>';
+        report=report+'<th style="width:10%">TBD</th>';
+        report=report+'<th style="width:10%">TBD</th>';
         report=report+'</tr>';
         Object.keys(nameList).forEach(function (name) {
-          let used = flexUsed[name];
-          let earned = flexEarned[name];
-          if (typeof used === 'undefined') {
+          let hrs = hoursWorked[name];
+          if (typeof hrs === 'undefined') {
             used = 0;
           }
-          if (typeof earned === 'undefined') {
+          if (typeof hrs === 'undefined') {
             earned = 0;
           }
-          let net = earned - used;
 
           if (mgrLookup[name]===mgr) {
             //report = report + truncText(name,40) + ' NET =  ' + net + '&emsp; &emsp; [ Earned=' + earned + ' Used=' + used +  '] <br>';
             report=report+'<tr>';
             let style='';
-            if (parseInt(net)<0) {style=' style="color:red"';}
-            else if (parseInt(net)>24) {style=' style="color:blue"';}
+            if (parseInt(hrs)<36) {style=' style="color:red"';}
+            else if (parseInt(hrs)>44) {style=' style="color:blue"';}
 
             report=report+'<td'+style+'>'+name+'</td>';
-            report=report+'<td'+style+'>'+net+'</td>';
-            report=report+'<td'+style+'>'+earned+'</td>';
-            report=report+'<td'+style+'>'+used+'</td>';
+            report=report+'<td'+style+'>'+hrs+'</td>';
+            report=report+'<td'+style+'>'+hrs+'</td>';
+            report=report+'<td'+style+'>'+hrs+'</td>';
             report=report+'</tr>';
           }
         });
@@ -177,7 +205,7 @@ export default Ember.Controller.extend({
       let reader = new FileReader();
 
       reader.onload = function (e) {
-        self.send('import', reader.result);
+        self.send('loadData', reader.result);
       };
       reader.readAsText(file);
     }

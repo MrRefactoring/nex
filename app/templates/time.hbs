@@ -1,0 +1,27 @@
+<h2>Time Report Summary: {{searchWeek}}</h2>
+{{x-file-input alt="Import Time Report" class="upload" multiple=false action=(action "process") accept="image/jpg"}}
+{{#paper-select
+  getItems=onUserLoad
+  label="Week"
+  selected=searchWeek
+  options=weekList
+  onChange=(action (mut searchWeek))
+  as |item|
+}}
+  {{item}}
+{{/paper-select}}&emsp;
+{{#if true}}
+  Debug&emsp;{{#paper-checkbox value=debug onChange=(action (mut debug))}}{{/paper-checkbox}}
+{{/if}}
+
+<br><br>
+{{#if debug}}
+  <b>Manual Input</b><br>
+  {{textarea value=import rows="8" cols='150'}}<br><br>
+  <button {{action 'import' import true}}>Import Data</button>
+  <br><br>
+
+  <b>Processed Data:</b><br><br>
+  {{textarea value=processed rows="8" cols='150'}}<br><br>
+{{/if}}
+{{{report}}}

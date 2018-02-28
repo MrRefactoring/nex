@@ -9,6 +9,7 @@ const Router = EmberRouter.extend({
 Router.map(function() {
   this.route('index',{'path': '/'});
   this.route('flex');
+  this.route('time');
 });
 
 export default Router;
