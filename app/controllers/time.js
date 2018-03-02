@@ -4,6 +4,8 @@ import {getToday, getTodaySortable, truncText} from '../utils/functions';
 export default Ember.Controller.extend({
   processed:'',
   debug:false,
+  imported:false,
+  missing:false,
   timeData: '',
   refresh:false,
   searchWeek:'02/19/2018 - 02/25/2018',
@@ -11,13 +13,14 @@ export default Ember.Controller.extend({
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
     '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
   ],
-  update: Ember.computed('searchWeek', function () {
+  update: Ember.computed('searchWeek', 'missing', function () {
     this.send('filter');
-    return this.get('searchWeek');
+    return this.get('missing');
   }),
   actions: {
     loadData(data){
       this.set('timeData',data);
+      this.set('imported',true);
       this.send('filter');
     },
     filter(){
@@ -42,6 +45,13 @@ export default Ember.Controller.extend({
       let nameList={};
       let mgrList={};
       let mgrLookup={};
+      let vacation={};
+      let personal={};
+      let holidays={};
+      let netFlex={};
+      let nonBillable={};
+      let training={};
+      let totalHrs={};
 
       // For Importing Data
       let str1='';
@@ -132,11 +142,11 @@ export default Ember.Controller.extend({
         if (name==='User') header=true;
 
         // Create Record if not matched
-        if (!header && week===self.get('searchWeek') && project !=='~FXearned - Flex Time Earned') {
+        if (!header && week===self.get('searchWeek')) {
           if (count<=10) {
             str2 = str2 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
           }
-          str1 = str1 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
+          str1 = str1 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week},${billable}\n`;
           if (count===1){
             strDetail=strDetail+'TIMECARD IMPORT DETAIL:\n';
             strDetail=strDetail+'UNIT: '+unit+'\n';
@@ -157,43 +167,113 @@ export default Ember.Controller.extend({
           mgrList[mgr]=mgr;
           mgrLookup[name]=mgr;
 
-          addVal(hoursWorked,name,hours);
+          if (project==='~VA999 - Vacation'){
+            addVal(vacation, name, hours);
+          }
+          else if (project==='~HL999 - Holiday'){
+            addVal(holidays, name, hours);
+          }
+          else if (project==='~PE999 - Personal time'){
+            addVal(personal, name, hours);
+          }
+          else if (project==='~TR999 - Training'){
+            addVal(training, name, hours);
+          }
+          else if (project==='~FXused - Flex Time Used'){
+            subVal(netFlex, name, hours);
+          }
+          else if (project==='~FXearned - Flex Time Earned'){
+            addVal(netFlex, name, hours);
+          }
+          else if (project==='~TR999 - Training'){
+            addVal(training, name, hours);
+          }
+          else if (billable==='No'){
+            addVal(nonBillable, name, hours);
+          }
+          else if (billable==='Yes'){
+            addVal(hoursWorked, name, hours);
+          }
+
+          // Total Hours
+          if (project!=='~FXearned - Flex Time Earned'){
+            addVal(totalHrs, name, hours);
+          }
         }
       });
-      if (this.get('debug')) alert(strDetail);
+      if (this.get('debug')) {alert(strDetail);}
       this.set('processed',str1);
 
       // Final List
-      let report='<h2>TIMECARD REPORT '+getToday()+' [week: '+self.get('searchWeek')+']</h2>';
+      let report='';
       Object.keys(mgrList).forEach(function(mgr) {
         //report=report+'<b>Manager: '+mgr+'</b><br>';
         report=report+'<table style="width:50%">';
         report=report+'<tr>'+'<th style="width:30%">'+'Manager: '+mgr+'</th>';
-        report=report+'<th style="width:10%">HRS WORKED</th>';
-        report=report+'<th style="width:10%">TBD</th>';
-        report=report+'<th style="width:10%">TBD</th>';
+        report=report+'<th style="width:10%">TOTAL HRS</th>';
+        report=report+'<th style="width:10%">Billable</th>';
+        report=report+'<th style="width:10%">Non-Bill</th>';
+        report=report+'<th style="width:10%">VAC</th>';
+        report=report+'<th style="width:10%">PE</th>';
+        report=report+'<th style="width:10%">Hol</th>';
+        report=report+'<th style="width:10%">Flex</th>';
+        report=report+'<th style="width:10%">Training</th>';
         report=report+'</tr>';
         Object.keys(nameList).forEach(function (name) {
           let hrs = hoursWorked[name];
+          let vac = vacation[name];
+          let hol = holidays[name];
+          let pe = personal[name];
+          let flex = netFlex[name];
+          let non = nonBillable[name];
+          let total = totalHrs[name];
+          let train = training[name];
           if (typeof hrs === 'undefined') {
-            used = 0;
+            hrs = 0;
           }
-          if (typeof hrs === 'undefined') {
-            earned = 0;
+          if (typeof vac === 'undefined') {
+            vac = 0;
+          }
+          if (typeof hol === 'undefined') {
+            hol = 0;
+          }
+          if (typeof pe === 'undefined') {
+            pe = 0;
+          }
+          if (typeof flex === 'undefined') {
+            flex = 0;
+          }
+          if (typeof non === 'undefined') {
+            non = 0;
+          }
+          if (typeof total === 'undefined') {
+            total = 0;
+          }
+          if (typeof train === 'undefined') {
+            train = 0;
           }
 
           if (mgrLookup[name]===mgr) {
             //report = report + truncText(name,40) + ' NET =  ' + net + '&emsp; &emsp; [ Earned=' + earned + ' Used=' + used +  '] <br>';
-            report=report+'<tr>';
-            let style='';
-            if (parseInt(hrs)<36) {style=' style="color:red"';}
-            else if (parseInt(hrs)>44) {style=' style="color:blue"';}
 
-            report=report+'<td'+style+'>'+name+'</td>';
-            report=report+'<td'+style+'>'+hrs+'</td>';
-            report=report+'<td'+style+'>'+hrs+'</td>';
-            report=report+'<td'+style+'>'+hrs+'</td>';
-            report=report+'</tr>';
+            let style='';
+            if (parseInt(total)<36) {style=' style="color:red"';}
+            else if (parseInt(total)>44) {style=' style="color:blue"';}
+
+            if (!self.get('missing') || (parseInt(total)<36))
+            {
+              report = report + '<tr>';
+              report = report + '<td' + style + '>' + name + '</td>';
+              report = report + '<td' + style + '>' + total + '</td>';
+              report = report + '<td' + style + '>' + hrs + '</td>';
+              report = report + '<td' + style + '>' + non + '</td>';
+              report = report + '<td' + style + '>' + vac + '</td>';
+              report = report + '<td' + style + '>' + pe + '</td>';
+              report = report + '<td' + style + '>' + hol + '</td>';
+              report = report + '<td' + style + '>' + flex + '</td>';
+              report = report + '<td' + style + '>' + train + '</td>';
+              report = report + '</tr>';
+            }
           }
         });
         report = report + '</table>'+'<br>';
@@ -227,6 +307,15 @@ function addVal(assoc,key,val){
   }
   else {
     assoc[key] = parseFloat(val);
+  }
+}
+
+function subVal(assoc,key,val){
+  if (assoc.hasOwnProperty(key)) {
+    assoc[key] = assoc[key] - parseFloat(val);
+  }
+  else {
+    assoc[key] = -parseFloat(val);
   }
 }
 

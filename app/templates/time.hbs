@@ -1,27 +1,34 @@
-<h2>Time Report Summary: {{searchWeek}}</h2>
-{{x-file-input alt="Import Time Report" class="upload" multiple=false action=(action "process") accept="image/jpg"}}
-{{#paper-select
-  getItems=onUserLoad
-  label="Week"
-  selected=searchWeek
-  options=weekList
-  onChange=(action (mut searchWeek))
+{{#if (not imported)}}
+  <h2>Time Report Summary:</h2>
+  {{x-file-input alt="Import Time Report" class="upload" multiple=false action=(action "process") accept="image/jpg"}}
+  {{#if true}}
+    &emsp;Debug&nbsp;{{#paper-checkbox value=debug onChange=(action (mut debug))}}{{/paper-checkbox}}
+  {{/if}}
+{{else}}
+  <h2>Nexonia Timecard File Loaded</h2>
+  Report Week:
+  {{#paper-select
+    getItems=onUserLoad
+    label="Week"
+    selected=searchWeek
+    options=weekList
+    onChange=(action (mut searchWeek))
   as |item|
-}}
-  {{item}}
-{{/paper-select}}&emsp;
-{{#if true}}
-  Debug&emsp;{{#paper-checkbox value=debug onChange=(action (mut debug))}}{{/paper-checkbox}}
+  }}
+    {{item}}
+  {{/paper-select}}&emsp;
+  Missing Only&nbsp;{{#paper-checkbox value=missing onChange=(action (mut missing))}}{{/paper-checkbox}}
+  {{#if update}}
+    <h2>Timecard Report&emsp; week: {{searchWeek}}</h2>
+  {{else}}
+    <h2>Missing Time Report&emsp; week: {{searchWeek}}</h2>
+  {{/if}}
+  <br>
+
+  {{#if debug}}
+    <b>Processed Data:</b><br><br>
+    {{textarea value=processed rows="8" cols='150'}}<br><br>
+  {{/if}}
+  {{{report}}}
 {{/if}}
 
-<br><br>
-{{#if debug}}
-  <b>Manual Input</b><br>
-  {{textarea value=import rows="8" cols='150'}}<br><br>
-  <button {{action 'import' import true}}>Import Data</button>
-  <br><br>
-
-  <b>Processed Data:</b><br><br>
-  {{textarea value=processed rows="8" cols='150'}}<br><br>
-{{/if}}
-{{{report}}}
