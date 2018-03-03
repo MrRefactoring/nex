@@ -5,7 +5,7 @@
     &emsp;Debug&nbsp;{{#paper-checkbox value=debug onChange=(action (mut debug))}}{{/paper-checkbox}}
   {{/if}}
 {{else}}
-  <h2>Nexonia Timecard File Loaded</h2>
+  <h4>Nexonia Timecard File Loaded</h4>
   Report Week:
   {{#paper-select
     getItems=onUserLoad
@@ -17,11 +17,32 @@
   }}
     {{item}}
   {{/paper-select}}&emsp;
-  Missing Only&nbsp;{{#paper-checkbox value=missing onChange=(action (mut missing))}}{{/paper-checkbox}}
-  {{#if update}}
-    <h2>Timecard Report&emsp; week: {{searchWeek}}</h2>
+  Managers:
+    {{#paper-select
+      getItems=onUserLoad
+      label="manager"
+      selected=mgr
+      options=mgrList
+      onChange=(action (mut mgr))
+    as |item|
+    }}
+      {{item}}
+    {{/paper-select}}&emsp;
+  Missing Only&nbsp;{{#paper-checkbox value=missingOnly onChange=(action (mut missingOnly))}}{{/paper-checkbox}}&nbsp;
+  Hide Disabled&nbsp;{{#paper-checkbox value=hideDisabled onChange=(action (mut hideDisabled))}}{{/paper-checkbox}}&nbsp;
+  YTD&nbsp;{{#paper-checkbox value=showYTD onChange=(action (mut showYTD))}}{{/paper-checkbox}}&nbsp;
+  {{#if showYTD}}
+    {{#if update}}
+      <h2>Missing Time YTD Report&emsp; week: {{searchWeek}}</h2>
+    {{else}}
+      <h2>Timecard YTD Report&emsp; week: {{searchWeek}}</h2>
+    {{/if}}
   {{else}}
-    <h2>Missing Time Report&emsp; week: {{searchWeek}}</h2>
+    {{#if update}}
+      <h2>Missing Time Weekly Report&emsp; week: {{searchWeek}}</h2>
+    {{else}}
+      <h2>Timecard Weekly Report&emsp; week: {{searchWeek}}</h2>
+    {{/if}}
   {{/if}}
   <br>
 

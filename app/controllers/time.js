@@ -5,23 +5,69 @@ export default Ember.Controller.extend({
   processed:'',
   debug:false,
   imported:false,
-  missing:false,
+  missingOnly:false,
+  hideDisabled:true,
   timeData: '',
   refresh:false,
-  searchWeek:'02/19/2018 - 02/25/2018',
+  showYTD:false,
+  mgr:'ALL',
+  mgrList:['ALL'],
+  nameList:'',
+  searchWeek:'02/26/2018 - 03/04/2018',
   weekList: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
     '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
+    '03/26/2018 - 04/01/2018','04/02/2018 - 04/08/2018','04/09/2018 - 04/15/2018','04/16/2018 - 04/22/2018',
+    '04/23/2018 - 04/29/2018','04/30/2018 - 05/06/2018','05/07/2018 - 05/13/2018','05/14/2018 - 05/20/2018',
   ],
-  update: Ember.computed('searchWeek', 'missing', function () {
+  update: Ember.computed('searchWeek', 'mgr','missingOnly', 'hideDisabled', 'showYTD', function () {
+    console.log('Update');
     this.send('filter');
-    return this.get('missing');
+    return this.get('missingOnly');
   }),
   actions: {
     loadData(data){
+      console.log('loadData');
       this.set('timeData',data);
       this.set('imported',true);
+      this.send('getEmployees',data);
       this.send('filter');
+    },
+    getEmployees(data){
+      console.log('getEmployees');
+      let nameList={};
+      let mgrList={};
+      let mgrLookup={};
+
+      let lines = data.split('\n');
+      lines.forEach(function (line) {
+        let name = '';
+        let mgr = '';
+        line = line.replace(/","/g, "^");  //change <","> to <^>
+        line = line.replace(/"/g, "");       //remove <">
+        let importData = line.split('^');  //split on <^>
+        let i = 0;  // data field count
+
+        importData.forEach(function (item) {
+          item = item.trim();
+          item = item.replace(/, /g, "_"); //replace <,>with <_>
+
+          if (i === 1) {
+            name = item;
+          }
+          else if (i === 11) {
+            mgr = item;
+          }
+          i++;
+        });
+        if (name !== 'User') {
+          nameList[name] = name;
+          mgrList[mgr] = mgr;
+          mgrLookup[name] = mgr;
+        }
+      });
+      this.set('nameList',getKeys(nameList));
+      this.set('mgrList',['ALL'].concat(getKeys(mgrList)));
     },
     filter(){
       //unit,name,agency,project,emp_type,emp_band,date,billable,status,
@@ -41,17 +87,22 @@ export default Ember.Controller.extend({
       let week = '';
 
       /// For Report
-      let hoursWorked={};
-      let nameList={};
-      let mgrList={};
+      let billedHrs={};
+      let approvedHrs={};
+      let nameList=this.get('nameList');
+      let mgrList=this.get('mgrList');
       let mgrLookup={};
       let vacation={};
       let personal={};
       let holidays={};
       let netFlex={};
+      let flexUsed={};
+      let flexEarned={};
       let nonBillable={};
       let training={};
-      let totalHrs={};
+      let submittedHrs={};
+      let rejectedHrs={};
+      let draftHrs={};
 
       // For Importing Data
       let str1='';
@@ -81,6 +132,7 @@ export default Ember.Controller.extend({
         importData.forEach(function (item) {
           item=item.trim();
           item = item.replace(/, /g,"_"); //replace <,>with <_>
+
           if (i === 0) {
             unit = item;
           }
@@ -139,146 +191,167 @@ export default Ember.Controller.extend({
           i++;
         });
 
-        if (name==='User') header=true;
+        if (name === 'User') header = true;
 
-        // Create Record if not matched
-        if (!header && week===self.get('searchWeek')) {
-          if (count<=10) {
+        if (!header) {
+          mgrLookup[name] = mgr;  //build manager lookup table
+        }
+
+        // Save data for current week / YTD
+        let matched=(!header) && (week===self.get('searchWeek') || self.get('showYTD'));
+
+        if (matched) {
+          if (count <= 10) {
             str2 = str2 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
           }
           str1 = str1 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week},${billable}\n`;
-          if (count===1){
-            strDetail=strDetail+'TIMECARD IMPORT DETAIL:\n';
-            strDetail=strDetail+'UNIT: '+unit+'\n';
-            strDetail=strDetail+'NAME: '+name+'\n';
-            strDetail=strDetail+'PROJECT: '+project+'\n';
-            strDetail=strDetail+'DATE: '+date+'\n';
-            strDetail=strDetail+'BILLABLE: '+billable+'\n';
-            strDetail=strDetail+'STATUS: '+status+'\n';
-            strDetail=strDetail+'MEMO: '+memo+'\n';
-            strDetail=strDetail+'HOURS: '+hours+'\n';
-            strDetail=strDetail+'MGR: '+mgr+'\n';
-            strDetail=strDetail+'WEEK: '+week+'\n';
+          if (count === 1) {
+            strDetail = strDetail + 'TIMECARD IMPORT DETAIL:\n';
+            strDetail = strDetail + 'UNIT: ' + unit + '\n';
+            strDetail = strDetail + 'NAME: ' + name + '\n';
+            strDetail = strDetail + 'PROJECT: ' + project + '\n';
+            strDetail = strDetail + 'DATE: ' + date + '\n';
+            strDetail = strDetail + 'BILLABLE: ' + billable + '\n';
+            strDetail = strDetail + 'STATUS: ' + status + '\n';
+            strDetail = strDetail + 'MEMO: ' + memo + '\n';
+            strDetail = strDetail + 'HOURS: ' + hours + '\n';
+            strDetail = strDetail + 'MGR: ' + mgr + '\n';
+            strDetail = strDetail + 'WEEK: ' + week + '\n';
           }
           count++;
 
-          //update Name and Manager List
-          nameList[name]=name;
-          mgrList[mgr]=mgr;
-          mgrLookup[name]=mgr;
-
-          if (project==='~VA999 - Vacation'){
+          if (project === '~VA999 - Vacation') {
             addVal(vacation, name, hours);
           }
-          else if (project==='~HL999 - Holiday'){
+          else if (project === '~HL999 - Holiday') {
             addVal(holidays, name, hours);
           }
-          else if (project==='~PE999 - Personal time'){
+          else if (project === '~PE999 - Personal time') {
             addVal(personal, name, hours);
           }
-          else if (project==='~TR999 - Training'){
+          else if (project === '~TR999 - Training') {
             addVal(training, name, hours);
           }
-          else if (project==='~FXused - Flex Time Used'){
+          else if (project === '~FXused - Flex Time Used') {
             subVal(netFlex, name, hours);
+            addVal(flexUsed, name, hours);
           }
-          else if (project==='~FXearned - Flex Time Earned'){
+          else if (project === '~FXearned - Flex Time Earned') {
             addVal(netFlex, name, hours);
+            addVal(flexEarned, name,hours);
           }
-          else if (project==='~TR999 - Training'){
+          else if (project === '~TR999 - Training') {
             addVal(training, name, hours);
           }
-          else if (billable==='No'){
+          else if (billable === 'No') {
             addVal(nonBillable, name, hours);
           }
-          else if (billable==='Yes'){
-            addVal(hoursWorked, name, hours);
+          else if (billable === 'Yes') {
+            addVal(billedHrs, name, hours);
           }
 
           // Total Hours
-          if (project!=='~FXearned - Flex Time Earned'){
-            addVal(totalHrs, name, hours);
+          if (project !== '~FXearned - Flex Time Earned') {
+            if (status === 'Approved') {
+              addVal(approvedHrs, name, hours);
+            }
+            else if (status === 'Draft') {
+              addVal(draftHrs, name, hours);
+            }
+            else if (status === 'Rejected') {
+              addVal(rejectedHrs, name, hours);
+            }
+            else if (status === 'Submitted') {
+              addVal(submittedHrs, name, hours);
+            }
           }
         }
       });
-      if (this.get('debug')) {alert(strDetail);}
-      this.set('processed',str1);
+      if (this.get('debug')) {
+        alert(strDetail);
+      }
+      this.set('processed', str1);
 
       // Final List
-      let report='';
-      Object.keys(mgrList).forEach(function(mgr) {
-        //report=report+'<b>Manager: '+mgr+'</b><br>';
-        report=report+'<table style="width:50%">';
-        report=report+'<tr>'+'<th style="width:30%">'+'Manager: '+mgr+'</th>';
-        report=report+'<th style="width:10%">TOTAL HRS</th>';
-        report=report+'<th style="width:10%">Billable</th>';
-        report=report+'<th style="width:10%">Non-Bill</th>';
-        report=report+'<th style="width:10%">VAC</th>';
-        report=report+'<th style="width:10%">PE</th>';
-        report=report+'<th style="width:10%">Hol</th>';
-        report=report+'<th style="width:10%">Flex</th>';
-        report=report+'<th style="width:10%">Training</th>';
-        report=report+'</tr>';
-        Object.keys(nameList).forEach(function (name) {
-          let hrs = hoursWorked[name];
-          let vac = vacation[name];
-          let hol = holidays[name];
-          let pe = personal[name];
-          let flex = netFlex[name];
-          let non = nonBillable[name];
-          let total = totalHrs[name];
-          let train = training[name];
-          if (typeof hrs === 'undefined') {
-            hrs = 0;
-          }
-          if (typeof vac === 'undefined') {
-            vac = 0;
-          }
-          if (typeof hol === 'undefined') {
-            hol = 0;
-          }
-          if (typeof pe === 'undefined') {
-            pe = 0;
-          }
-          if (typeof flex === 'undefined') {
-            flex = 0;
-          }
-          if (typeof non === 'undefined') {
-            non = 0;
-          }
-          if (typeof total === 'undefined') {
-            total = 0;
-          }
-          if (typeof train === 'undefined') {
-            train = 0;
-          }
+      let report = '';
+      mgrList.forEach(function (mgr) {
+        if (self.get('mgr') === 'ALL' || self.get('mgr') === mgr) {
 
-          if (mgrLookup[name]===mgr) {
-            //report = report + truncText(name,40) + ' NET =  ' + net + '&emsp; &emsp; [ Earned=' + earned + ' Used=' + used +  '] <br>';
+          let header = '';
+          let tableData = '';
+          // Create Header Rows
+          header = header + '<table style="width:70%">';
+          header = header + '<tr>' + '<th style="width:25%">' + 'Manager: ' + mgr + '</th>';
+          header = header + '<th style="text-align: center;width:5%">APPROVED</th>';
+          header = header + '<th style="text-align: center;width:5%">Submit</th>';
+          header = header + '<th style="text-align: center;width:5%">Draft</th>';
+          header = header + '<th style="text-align: center;width:5%">Rej</th>';
+          header = header + '<th style="text-align: center;width:5%">Billed</th>';
+          header = header + '<th style="text-align: center;width:5%">Non-Bill</th>';
+          header = header + '<th style="text-align: center;width:5%">Vac</th>';
+          header = header + '<th style="text-align: center;width:5%">Per</th>';
+          header = header + '<th style="text-align: center;width:5%">Hol</th>';
+          header = header + '<th style="text-align: center;width:5%">Net Flex</th>';
+          header = header + '<th style="text-align: center;width:5%">Flex Earned</th>';
+          header = header + '<th style="text-align: center;width:5%">Flex Taken</th>';
+          header = header + '<th style="text-align: center;width:5%">Training</th>';
+          header = header + '</tr>';
 
-            let style='';
-            if (parseInt(total)<36) {style=' style="color:red"';}
-            else if (parseInt(total)>44) {style=' style="color:blue"';}
+          nameList.forEach(function (name) {
+            if (mgrLookup[name] === mgr) {
+              let style = ' style="text-align:center"';
+              if (!self.get('showYTD')) {
+                if (parseInt(get(approvedHrs[name])) < 36) {
+                  style = ' style="text-align:center; color:red"';
+                }
+                else if (parseInt(get(approvedHrs[name])) > 45) {
+                  style = ' style="text-align:center; color:blue"';
+                }
+              }
 
-            if (!self.get('missing') || (parseInt(total)<36))
-            {
-              report = report + '<tr>';
-              report = report + '<td' + style + '>' + name + '</td>';
-              report = report + '<td' + style + '>' + total + '</td>';
-              report = report + '<td' + style + '>' + hrs + '</td>';
-              report = report + '<td' + style + '>' + non + '</td>';
-              report = report + '<td' + style + '>' + vac + '</td>';
-              report = report + '<td' + style + '>' + pe + '</td>';
-              report = report + '<td' + style + '>' + hol + '</td>';
-              report = report + '<td' + style + '>' + flex + '</td>';
-              report = report + '<td' + style + '>' + train + '</td>';
-              report = report + '</tr>';
+              let nameStyle='';
+              if (!self.get('showYTD')) {
+                if (parseInt(get(approvedHrs[name])) < 36) {
+                  nameStyle = ' style="color:red"';
+                }
+                else if (parseInt(get(approvedHrs[name])) > 45) {
+                  nameStyle = ' style="color:blue"';
+                }
+              }
+              if (!self.get('missingOnly') || (parseInt(get(approvedHrs[name])) < 36)){   // Reject Missing if needed
+
+                if (!self.get('hideDisabled') || !name.includes('(Disabled)')) {  //reject disbled if needed
+                  tableData = tableData + '<tr>';
+                  tableData = tableData + '<td' + nameStyle + '>' + name + '</td>';
+                  tableData = tableData + '<td' + style + '><b>' + get(approvedHrs[name]) + '</b></td>';
+                  tableData = tableData + '<td' + style + '>' + get(submittedHrs[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(draftHrs[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(rejectedHrs[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(billedHrs[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(nonBillable[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(vacation[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(personal[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(holidays[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(netFlex[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(flexEarned[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(flexUsed[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(training[name]) + '</td>';
+                  tableData = tableData + '</tr>';
+                }
+              }
             }
+          });
+
+          if (tableData !== '') {
+            report = report + header + tableData + '</table>' + '<br>';
           }
-        });
-        report = report + '</table>'+'<br>';
+        }
       });
       this.set('report', report);
+      //this.set('managers',list);
+
+      console.log('Filter');
+
     },
     process([file]) {
       let self = this;
@@ -292,7 +365,7 @@ export default Ember.Controller.extend({
   }
 });
 
-function addItem(assoc,key){
+function addItem(assoc, key) {
   if (assoc.hasOwnProperty(key)) {
     assoc[key] = assoc[key] + 1;
   }
@@ -301,7 +374,7 @@ function addItem(assoc,key){
   }
 }
 
-function addVal(assoc,key,val){
+function addVal(assoc, key, val) {
   if (assoc.hasOwnProperty(key)) {
     assoc[key] = assoc[key] + parseFloat(val);
   }
@@ -317,6 +390,11 @@ function subVal(assoc,key,val){
   else {
     assoc[key] = -parseFloat(val);
   }
+}
+
+function get(val){
+  if (typeof val === 'undefined') {return 0;}
+  else return val;
 }
 
 function sorted(assoc) {
@@ -340,4 +418,14 @@ function sorted(assoc) {
   });
 
   return str;
+}
+
+function getKeys(assoc){
+  let arr = []; // Array
+
+  // Save in Array
+  Object.keys(assoc).forEach(function (item) {
+    arr.push(item);
+  });
+  return arr;
 }
