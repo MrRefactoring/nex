@@ -1,7 +1,8 @@
 import Ember from 'ember';
+import Controller from '@ember/controller';
 import {getToday, getTodaySortable, truncText} from '../utils/functions';
 
-export default Ember.Controller.extend({
+export default Controller.extend({
   processed:'',
   debug:false,
   imported:false,
@@ -9,10 +10,10 @@ export default Ember.Controller.extend({
   hideDisabled:true,
   timeData: '',
   refresh:false,
-  showYTD:false,
   mgr:'ALL',
   mgrList:['ALL'],
   nameList:'',
+  type:'YTD',
   searchWeek:'02/26/2018 - 03/04/2018',
   weekList: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
@@ -20,7 +21,7 @@ export default Ember.Controller.extend({
     '03/26/2018 - 04/01/2018','04/02/2018 - 04/08/2018','04/09/2018 - 04/15/2018','04/16/2018 - 04/22/2018',
     '04/23/2018 - 04/29/2018','04/30/2018 - 05/06/2018','05/07/2018 - 05/13/2018','05/14/2018 - 05/20/2018',
   ],
-  update: Ember.computed('searchWeek', 'mgr','missingOnly', 'hideDisabled', 'showYTD', function () {
+  update: Ember.computed('searchWeek', 'mgr','missingOnly', 'hideDisabled', 'type', function () {
     console.log('Update');
     this.send('filter');
     return this.get('missingOnly');
@@ -198,7 +199,7 @@ export default Ember.Controller.extend({
         }
 
         // Save data for current week / YTD
-        let matched=(!header) && (week===self.get('searchWeek') || self.get('showYTD'));
+        let matched=(!header) && (week===self.get('searchWeek') || self.get('type')==='YTD');
 
         if (matched) {
           if (count <= 10) {
@@ -300,7 +301,7 @@ export default Ember.Controller.extend({
           nameList.forEach(function (name) {
             if (mgrLookup[name] === mgr) {
               let style = ' style="text-align:center"';
-              if (!self.get('showYTD')) {
+              if (self.get('type')!=='YTD') {
                 if (parseInt(get(approvedHrs[name])) < 36) {
                   style = ' style="text-align:center; color:red"';
                 }
@@ -310,7 +311,7 @@ export default Ember.Controller.extend({
               }
 
               let nameStyle='';
-              if (!self.get('showYTD')) {
+              if (self.get('type')!=='YTD') {
                 if (parseInt(get(approvedHrs[name])) < 36) {
                   nameStyle = ' style="color:red"';
                 }
@@ -361,6 +362,9 @@ export default Ember.Controller.extend({
         self.send('loadData', reader.result);
       };
       reader.readAsText(file);
+    },
+    setType(txt){
+      this.set('type',txt);
     }
   }
 });
