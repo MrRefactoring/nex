@@ -1,12 +1,14 @@
-import Ember from 'ember';
+import { computed } from '@ember/object';
 import Controller from '@ember/controller';
-import {getToday, getTodaySortable, truncText} from '../utils/functions';
+import {getTodaySortable} from '../utils/functions';
 
 export default Controller.extend({
   processed:'',
   debug:false,
   imported:false,
-  missingOnly:false,
+
+  excludePartial:false,
+  shortOnly:false,
   hideDisabled:true,
   timeData: '',
   refresh:false,
@@ -14,17 +16,21 @@ export default Controller.extend({
   mgrList:['ALL'],
   nameList:'',
   type:'YTD',
+  report:'',
   searchWeek:'02/26/2018 - 03/04/2018',
+  searchMonth:1,
   weekList: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
     '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
     '03/26/2018 - 04/01/2018','04/02/2018 - 04/08/2018','04/09/2018 - 04/15/2018','04/16/2018 - 04/22/2018',
     '04/23/2018 - 04/29/2018','04/30/2018 - 05/06/2018','05/07/2018 - 05/13/2018','05/14/2018 - 05/20/2018',
   ],
-  update: Ember.computed('searchWeek', 'mgr','missingOnly', 'hideDisabled', 'type', function () {
+  monthList:[1,2,3,4,5,6,7,8,9,10,11,12],
+  update: computed('searchWeek', 'searchMonth','mgr','shortOnly', 'hideDisabled', 'excludePartial',
+    'type', function () {
     console.log('Update');
     this.send('filter');
-    return this.get('missingOnly');
+    return this.get('shortOnly');
   }),
   actions: {
     loadData(data){
@@ -89,6 +95,7 @@ export default Controller.extend({
 
       /// For Report
       let billedHrs={};
+      let totalHrs={};
       let approvedHrs={};
       let nameList=this.get('nameList');
       let mgrList=this.get('mgrList');
@@ -114,6 +121,11 @@ export default Controller.extend({
       let count = 1;
       let context=this;   //need to use this in inner functions
       let dbReq=null;
+
+      // TOTALS
+      let empCount = 0;
+      let billedCount=0;
+      let vacCount=0;
 
       str2 = str2 + "New Import: " + getTodaySortable() + '\n';
 
@@ -192,6 +204,11 @@ export default Controller.extend({
           i++;
         });
 
+        let dateData = date.split('/');
+        let mm = parseInt(dateData[0]);
+        let dd = parseInt(dateData[1]);
+        let yyyy = parseInt(dateData[2]);
+
         if (name === 'User') header = true;
 
         if (!header) {
@@ -199,7 +216,12 @@ export default Controller.extend({
         }
 
         // Save data for current week / YTD
-        let matched=(!header) && (week===self.get('searchWeek') || self.get('type')==='YTD');
+        let matched=(!header) &&
+          (
+            (self.get('type')==='WEEK' && week===self.get('searchWeek')) ||
+            (self.get('type')==='YTD') ||
+            (self.get('type')==='MONTH' && self.get('searchMonth')===mm)
+          );
 
         if (matched) {
           if (count <= 10) {
@@ -265,6 +287,9 @@ export default Controller.extend({
             else if (status === 'Submitted') {
               addVal(submittedHrs, name, hours);
             }
+
+            // TOTAL HRS
+            addVal(totalHrs,name,hours);
           }
         }
       });
@@ -287,6 +312,7 @@ export default Controller.extend({
           header = header + '<th style="text-align: center;width:5%">Submit</th>';
           header = header + '<th style="text-align: center;width:5%">Draft</th>';
           header = header + '<th style="text-align: center;width:5%">Rej</th>';
+          header = header + '<th style="text-align: center;width:5%">Total</th>';
           header = header + '<th style="text-align: center;width:5%">Billed</th>';
           header = header + '<th style="text-align: center;width:5%">Non-Bill</th>';
           header = header + '<th style="text-align: center;width:5%">Vac</th>';
@@ -301,33 +327,58 @@ export default Controller.extend({
           nameList.forEach(function (name) {
             if (mgrLookup[name] === mgr) {
               let style = ' style="text-align:center"';
-              if (self.get('type')!=='YTD') {
-                if (parseInt(get(approvedHrs[name])) < 36) {
-                  style = ' style="text-align:center; color:red"';
-                }
-                else if (parseInt(get(approvedHrs[name])) > 45) {
-                  style = ' style="text-align:center; color:blue"';
-                }
-              }
-
               let nameStyle='';
-              if (self.get('type')!=='YTD') {
+              let partial=false;
+
+              if (self.get('type')==='WEEK') {
                 if (parseInt(get(approvedHrs[name])) < 36) {
                   nameStyle = ' style="color:red"';
+                  partial=true;
                 }
                 else if (parseInt(get(approvedHrs[name])) > 45) {
                   nameStyle = ' style="color:blue"';
                 }
               }
-              if (!self.get('missingOnly') || (parseInt(get(approvedHrs[name])) < 36)){   // Reject Missing if needed
 
-                if (!self.get('hideDisabled') || !name.includes('(Disabled)')) {  //reject disbled if needed
+              else if (self.get('type')==='MONTH') {
+                if (parseInt(get(approvedHrs[name])) < 160) {
+                  nameStyle = ' style="color:red"';
+                  partial=true;
+                }
+                else if (parseInt(get(approvedHrs[name])) > 200) {
+                  nameStyle = ' style="color:blue"';
+                }
+              }
+
+              else if (self.get('type')==='YTD') {
+                if (parseInt(get(approvedHrs[name])) < 1600) {
+                  nameStyle = ' style="color:red"';
+                  partial=true;
+                }
+                else if (parseInt(get(approvedHrs[name])) > 2000) {
+                  nameStyle = ' style="color:blue"';
+                }
+              }
+
+              if (!self.get('shortOnly') || partial){   // Reject Partial if needed
+                let disabled= (self.get('hideDisabled') && name.includes('(Disabled)'));
+                let excluded= (self.get('excludePartial') && partial );
+                if (!disabled && !excluded) {
+
+                  // Set Total Counts
+                  empCount++;
+                  billedCount=billedCount+get(billedHrs[name]);
+                  vacCount=vacCount+get(vacation[name])+get(personal[name]);
+
+
+                  // Create Table Row
                   tableData = tableData + '<tr>';
                   tableData = tableData + '<td' + nameStyle + '>' + name + '</td>';
                   tableData = tableData + '<td' + style + '><b>' + get(approvedHrs[name]) + '</b></td>';
                   tableData = tableData + '<td' + style + '>' + get(submittedHrs[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(draftHrs[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(rejectedHrs[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(totalHrs[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(billedHrs[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(nonBillable[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(vacation[name]) + '</td>';
@@ -348,11 +399,17 @@ export default Controller.extend({
           }
         }
       });
-      this.set('report', report);
-      //this.set('managers',list);
 
-      console.log('Filter');
+      // compute totals
+      let vacDays = 0.0;
+      if (empCount>0) {
+        vacDays = vacCount/empCount/8.0;
+        vacDays = vacDays.toFixed(1);
+      }
 
+
+      this.set('report',{table:report, empCount:empCount, billedCount:billedCount, vacCount:vacCount,
+                          vacDays:vacDays});
     },
     process([file]) {
       let self = this;

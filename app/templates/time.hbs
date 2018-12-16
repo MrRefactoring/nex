@@ -6,9 +6,10 @@
   {{/if}}
 {{else}}
   <h4>Nexonia Timecard File Loaded</h4>
-  {{#paper-button raised=true onClick=(action 'setType' 'YTD')}}YTD{{/paper-button}}
-  {{#paper-button raised=true onClick=(action 'setType' 'MONTH')}}by Month{{/paper-button}}
-  {{#paper-button raised=true onClick=(action 'setType' 'WEEK')}}by Week{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setType' 'YTD')}}YTD{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setType' 'MONTH')}}by Month{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setType' 'WEEK')}}by Week{{/paper-button}}
+  <br>
   {{#if (eq type 'WEEK')}}
     Report Week:
       {{#paper-select
@@ -22,9 +23,18 @@
       {{/paper-select}}&emsp;
 
   {{else if (eq type 'MONTH')}}
-    BY MONTH&emsp;
+    Report Month:
+      {{#paper-select
+        label="Month"
+        selected=searchMonth
+        options=monthList
+        onChange=(action (mut searchMonth))
+      as |item|
+      }}
+        {{item}}
+      {{/paper-select}}&emsp;
   {{else if (eq type 'YTD')}}
-    YTD&emsp;
+    Timeframe: YTD&emsp;
   {{/if}}
 
   Managers:
@@ -37,21 +47,30 @@
     }}
       {{item}}
     {{/paper-select}}&emsp;
-  Missing Only&nbsp;{{#paper-checkbox value=missingOnly onChange=(action (mut missingOnly))}}{{/paper-checkbox}}&nbsp;
+  Short Hours Only&nbsp;{{#paper-checkbox value=shortOnly onChange=(action (mut shortOnly))}}{{/paper-checkbox}}&nbsp;
   Hide Disabled&nbsp;{{#paper-checkbox value=hideDisabled onChange=(action (mut hideDisabled))}}{{/paper-checkbox}}&nbsp;
-  YTD&nbsp;{{#paper-checkbox value=showYTD onChange=(action (mut showYTD))}}{{/paper-checkbox}}&nbsp;
+  Exclude Partial Hours&nbsp;{{#paper-checkbox value=excludePartial onChange=(action (mut excludePartial))}}{{/paper-checkbox}}&nbsp;
+
   {{#if (eq type 'YTD')}}
     {{#if update}}
-      <h2>Missing Time YTD Report&emsp; week: {{searchWeek}}</h2>
+      <h2>Missing Time YTD Report</h2>
     {{else}}
-      <h2>Timecard YTD Report&emsp; week: {{searchWeek}}</h2>
+      <h2>Timecard YTD Report</h2>
     {{/if}}
-  {{else}}
+  {{else if (eq type 'WEEK')}}
     {{#if update}}
       <h2>Missing Time Weekly Report&emsp; week: {{searchWeek}}</h2>
     {{else}}
       <h2>Timecard Weekly Report&emsp; week: {{searchWeek}}</h2>
     {{/if}}
+
+  {{else if (eq type 'MONTH')}}
+    {{#if update}}
+      <h2>Missing Time Monthly Report&emsp; Month: {{searchMonth}}</h2>
+    {{else}}
+      <h2>Timecard Monthly Report&emsp; Month: {{searchMonth}}</h2>
+    {{/if}}
+
   {{/if}}
   <br>
 
@@ -59,6 +78,8 @@
     <b>Processed Data:</b><br><br>
     {{textarea value=processed rows="8" cols='150'}}<br><br>
   {{/if}}
-  {{{report}}}
+  Emp Count: {{report.empCount}}&emsp;Billed Count: {{report.billedCount}}&emsp;Vac Count: {{report.vacCount}}&emsp;
+  Vac Days: {{report.vacDays}}<br>
+  {{{report.table}}}
 {{/if}}
 
