@@ -19,19 +19,37 @@ export default Controller.extend({
   report:'',
   searchWeek:'02/26/2018 - 03/04/2018',
   searchMonth:1,
+  mmSearch:'01',
+  ddSearch:'01',
+  yySearch:'2018',
   weekList: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
     '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
     '03/26/2018 - 04/01/2018','04/02/2018 - 04/08/2018','04/09/2018 - 04/15/2018','04/16/2018 - 04/22/2018',
     '04/23/2018 - 04/29/2018','04/30/2018 - 05/06/2018','05/07/2018 - 05/13/2018','05/14/2018 - 05/20/2018',
+    '05/21/2018 - 05/27/2018','05/28/2018 - 06/03/2018','06/04/2018 - 06/10/2018','06/11/2018 - 06/17/2018',
+    '06/18/2018 - 06/24/2018','06/25/2018 - 07/01/2018','07/02/2018 - 07/08/2018','07/09/2018 - 07/15/2018',
+    '07/16/2018 - 07/22/2018','07/23/2018 - 07/29/2018','07/30/2018 - 08/05/2018','08/06/2018 - 08/12/2018',
+    '08/13/2018 - 08/19/2018','08/20/2018 - 08/26/2018','08/27/2018 - 09/02/2018','09/03/2018 - 09/09/2018',
+    '09/10/2018 - 09/16/2018','09/17/2018 - 09/23/2018','09/24/2018 - 09/30/2018','10/01/2018 - 10/07/2018',
+    '10/08/2018 - 10/14/2018','10/15/2018 - 10/21/2018','10/22/2018 - 10/28/2018','10/29/2018 - 11/04/2018',
+    '11/05/2018 - 11/11/2018','11/12/2018 - 11/18/2018','11/19/2018 - 11/25/2018','11/26/2018 - 12/02/2018',
+    '12/03/2018 - 12/09/2018','12/10/2018 - 12/16/2018','12/17/2018 - 12/23/2018','12/24/2018 - 12/30/2018',
   ],
   monthList:[1,2,3,4,5,6,7,8,9,10,11,12],
-  update: computed('searchWeek', 'searchMonth','mgr','shortOnly', 'hideDisabled', 'excludePartial',
+  mmList:['01','02','03','04','05','06','07','08','09','10','11','12'],
+  ddList:['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20',
+          '21','22','23','24','25','26','27','28','29','30','31'],
+  yyList:['2018','2019','2020'],
+  update: computed('searchWeek', 'searchMonth','searchDate','mgr','shortOnly', 'hideDisabled', 'excludePartial',
     'type', function () {
     console.log('Update');
     this.send('filter');
     return this.get('shortOnly');
   }),
+  searchDate: computed('mmSearch', 'ddSearch','yySearch', function () {
+      return this.get('mmSearch')+'/'+this.get('ddSearch')+'/'+this.get('yySearch');
+    }),
   actions: {
     loadData(data){
       console.log('loadData');
@@ -108,24 +126,43 @@ export default Controller.extend({
       let flexEarned={};
       let nonBillable={};
       let training={};
+      let unpaid={};
       let submittedHrs={};
       let rejectedHrs={};
       let draftHrs={};
+      let billingDays={};
+      let billingCount={};
 
       // For Importing Data
       let str1='';
       let str2 = '';
       let strDetail='';
-      let txt = '';
       let lines = data.split('\n');
       let count = 1;
-      let context=this;   //need to use this in inner functions
-      let dbReq=null;
 
       // TOTALS
-      let empCount = 0;
-      let billedCount=0;
       let vacCount=0;
+      let lostCount=0;
+      let billDaysCount=0;
+      let billDaysTotal=0.0;
+      let billHrCount=0;
+      let billHrTotal=0.0;
+
+      let vacTot=0;
+      let billTot=0;
+      let persTot=0;
+      let trainTot=0;
+      let flexEarnTot=0;
+      let flexUsedTot=0;
+      let holTot=0;
+      let empTot=0;
+      let unpaidTot=0;
+
+      // flags
+      let byDay = this.get('type')==='DAY';
+      let byWeek = this.get('type')==='WEEK';
+      let byMonth = this.get('type')==='MONTH';
+      let byYTD = this.get('type')==='YTD';
 
       str2 = str2 + "New Import: " + getTodaySortable() + '\n';
 
@@ -218,9 +255,10 @@ export default Controller.extend({
         // Save data for current week / YTD
         let matched=(!header) &&
           (
-            (self.get('type')==='WEEK' && week===self.get('searchWeek')) ||
-            (self.get('type')==='YTD') ||
-            (self.get('type')==='MONTH' && self.get('searchMonth')===mm)
+            (byWeek && week===self.get('searchWeek')) ||
+            (byDay && date===self.get('searchDate')) ||
+            (byYTD) ||
+            (byMonth && self.get('searchMonth')===mm)
           );
 
         if (matched) {
@@ -266,11 +304,18 @@ export default Controller.extend({
           else if (project === '~TR999 - Training') {
             addVal(training, name, hours);
           }
+          else if (project === '~UT999 - Unpaid Time Off') {
+            addVal(unpaid, name, hours);
+          }
           else if (billable === 'No') {
             addVal(nonBillable, name, hours);
           }
           else if (billable === 'Yes') {
             addVal(billedHrs, name, hours);
+            if (hours>5) {
+              addVal(billingDays,name,1);
+              addVal(billingCount,name,hours);
+            }
           }
 
           // Total Hours
@@ -314,14 +359,17 @@ export default Controller.extend({
           header = header + '<th style="text-align: center;width:5%">Rej</th>';
           header = header + '<th style="text-align: center;width:5%">Total</th>';
           header = header + '<th style="text-align: center;width:5%">Billed</th>';
-          header = header + '<th style="text-align: center;width:5%">Non-Bill</th>';
           header = header + '<th style="text-align: center;width:5%">Vac</th>';
           header = header + '<th style="text-align: center;width:5%">Per</th>';
           header = header + '<th style="text-align: center;width:5%">Hol</th>';
           header = header + '<th style="text-align: center;width:5%">Net Flex</th>';
           header = header + '<th style="text-align: center;width:5%">Flex Earned</th>';
           header = header + '<th style="text-align: center;width:5%">Flex Taken</th>';
-          header = header + '<th style="text-align: center;width:5%">Training</th>';
+          header = header + '<th style="text-align: center;width:5%">Train</th>';
+          header = header + '<th style="text-align: center;width:5%">UnPaid</th>';
+          header = header + '<th style="text-align: center;width:5%">Other Unbilled</th>';
+          header = header + '<th style="text-align: center;width:5%">Bill Days</th>';
+          header = header + '<th style="text-align: center;width:5%">Bill Avg</th>';
           header = header + '</tr>';
 
           nameList.forEach(function (name) {
@@ -350,6 +398,16 @@ export default Controller.extend({
                 }
               }
 
+              else if (self.get('type')==='DAY') {
+                if (parseInt(get(approvedHrs[name])) < 6) {
+                  nameStyle = ' style="color:red"';
+                  partial=true;
+                }
+                else if (parseInt(get(approvedHrs[name])) > 9) {
+                  nameStyle = ' style="color:blue"';
+                }
+              }
+
               else if (self.get('type')==='YTD') {
                 if (parseInt(get(approvedHrs[name])) < 1600) {
                   nameStyle = ' style="color:red"';
@@ -365,11 +423,41 @@ export default Controller.extend({
                 let excluded= (self.get('excludePartial') && partial );
                 if (!disabled && !excluded) {
 
-                  // Set Total Counts
-                  empCount++;
-                  billedCount=billedCount+get(billedHrs[name]);
-                  vacCount=vacCount+get(vacation[name])+get(personal[name]);
+                  // Set Averages
+                  let billAvg=0.0;
+                  if (get(billingDays[name])>0) {
+                    billAvg = get(billingCount[name])/parseFloat(get(billingDays[name]));
+                    billAvg=billAvg.toFixed(2);
+                  }
 
+                  // Set Billing Data (after averages are known)
+                  let billDays = parseFloat(get(billingDays[name]));
+
+                  // Set Total Counts
+                  vacCount=vacCount+get(vacation[name])+get(personal[name]);
+                  lostCount=lostCount+get(vacation[name])+get(personal[name])+
+                    get(nonBillable[name])+get(flexUsed[name])+get(holidays[name]);
+
+                  empTot++;
+                  vacTot+=get(vacation[name]);
+                  persTot+=get(personal[name]);
+                  trainTot+=get(training[name]);
+                  flexEarnTot+=get(flexEarned[name]);
+                  flexUsedTot+=get(flexUsed[name]);
+                  holTot+=get(holidays[name]);
+                  trainTot+=get(training[name]);
+                  billTot+=get(billedHrs[name]);
+                  unpaidTot+=get(unpaid[name]);
+
+                  if (byDay || (byWeek && billDays>4) || (byMonth && billDays>16) || (byYTD && billDays>185)) {
+                    billDaysTotal = billDaysTotal + billDays;
+                    billDaysCount++;
+                  }
+
+                  if (billAvg>7.5) {
+                    billHrTotal = billHrTotal + parseFloat(billAvg);
+                    billHrCount++;
+                  }
 
                   // Create Table Row
                   tableData = tableData + '<tr>';
@@ -380,7 +468,6 @@ export default Controller.extend({
                   tableData = tableData + '<td' + style + '>' + get(rejectedHrs[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(totalHrs[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(billedHrs[name]) + '</td>';
-                  tableData = tableData + '<td' + style + '>' + get(nonBillable[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(vacation[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(personal[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(holidays[name]) + '</td>';
@@ -388,6 +475,10 @@ export default Controller.extend({
                   tableData = tableData + '<td' + style + '>' + get(flexEarned[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(flexUsed[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(training[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(unpaid[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(nonBillable[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + get(billingDays[name]) + '</td>';
+                  tableData = tableData + '<td' + style + '>' + billAvg + '</td>';
                   tableData = tableData + '</tr>';
                 }
               }
@@ -402,14 +493,78 @@ export default Controller.extend({
 
       // compute totals
       let vacDays = 0.0;
-      if (empCount>0) {
-        vacDays = vacCount/empCount/8.0;
-        vacDays = vacDays.toFixed(1);
+      if (empTot>0) {
+        vacDays = vacCount/empTot/8.0;
+        vacDays = vacDays.toFixed(2);
       }
 
+      let lostDays = 0.0;
+      if (empTot>0) {
+        lostDays = lostCount/empTot/8.0;
+        lostDays = lostDays.toFixed(2);
+      }
 
-      this.set('report',{table:report, empCount:empCount, billedCount:billedCount, vacCount:vacCount,
-                          vacDays:vacDays});
+      let billAvg=0.0;
+      if (billHrCount>0){
+        billAvg = billHrTotal/billHrCount;
+        billAvg=billAvg.toFixed(2);
+      }
+
+      let billDays=0.0;
+      if (billDaysCount>0){
+        billDays = billDaysTotal/billDaysCount;
+        billDays=billDays.toFixed(1);
+      }
+
+      let flexUsedAvg=0.0;
+      if (empTot>0){
+        flexUsedAvg = flexUsedTot/empTot/8.0;
+        flexUsedAvg=flexUsedAvg.toFixed(1);
+      }
+
+      let flexEarnAvg=0.0;
+      if (empTot>0){
+        flexEarnAvg = flexEarnTot/empTot/8.0;
+        flexEarnAvg=flexEarnAvg.toFixed(1);
+      }
+
+      let persAvg=0.0;
+      if (empTot>0){
+        persAvg = persTot/empTot/8.0;
+        persAvg=persAvg.toFixed(1);
+      }
+
+      let vacAvg=0.0;
+      if (empTot>0){
+        vacAvg = vacTot/empTot/8.0;
+        vacAvg=vacAvg.toFixed(1);
+      }
+
+      let holAvg=0.0;
+      if (empTot>0){
+        holAvg = holTot/empTot/8.0;
+        holAvg=holAvg.toFixed(1);
+      }
+
+      let trainAvg=0.0;
+      if (empTot>0){
+        trainAvg = trainTot/empTot/8.0;
+        trainAvg=trainAvg.toFixed(1);
+      }
+
+      let unpaidAvg=0.0;
+      if (empTot>0){
+        unpaidAvg = unpaidTot/empTot/8.0;
+        unpaidAvg=unpaidAvg.toFixed(1);
+      }
+
+      this.set('report',{table:report, billCount:billHrCount, vacCount:vacCount,
+        vacDays:vacDays, lostDays:lostDays, billAvg:billAvg, billDays:billDays,
+        flexUsedTotal:flexUsedTot, flexEarnedTotal:flexEarnTot,vacTotal:vacTot,persTotal:persTot,
+        flexUsedAvg:flexUsedAvg, flexEarnedAvg:flexEarnAvg,vacAvg:vacAvg,persAvg:persAvg,
+        holTotal:holTot, holAvg:holAvg,trainTotal:trainTot, trainAvg:trainAvg, billTot:billTot.toFixed(0),
+        empTotal:empTot, unpaidTotal:unpaidTot, unpaidAvg:unpaidAvg,
+      });
     },
     process([file]) {
       let self = this;

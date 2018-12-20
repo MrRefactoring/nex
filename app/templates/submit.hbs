@@ -1,0 +1,39 @@
+{{#if (not imported)}}
+  <h2>Late Timecard Submission Report:</h2>
+  {{x-file-input alt="Import Time Data" class="upload" multiple=false action=(action "process") accept="text/csv"}}
+  {{#if true}}
+    &emsp;Debug&nbsp;{{#paper-checkbox value=debug onChange=(action (mut debug))}}{{/paper-checkbox}}
+  {{/if}}
+{{else}}
+  <h4>Nexonia Timecard File Loaded</h4>
+
+  YTD Submission Time Report&emsp;
+
+  Managers:
+    {{#paper-select
+      label="manager"
+      selected=mgr
+      options=mgrList
+      onChange=(action (mut mgr))
+    as |item|
+    }}
+      {{item}}
+    {{/paper-select}}&emsp;
+  Hide Disabled Employees&nbsp;{{#paper-checkbox value=hideDisabled onChange=(action (mut hideDisabled))}}{{/paper-checkbox}}&nbsp;
+{{#if update}}
+  <h2>Timecard YTD Report</h2>
+{{else}}
+  <h2>Timecard YTD Report</h2>
+{{/if}}
+
+  <br>
+
+  {{#if debug}}
+    <b>Processed Data:</b><br><br>
+    {{textarea value=processed rows="8" cols='150'}}<br><br>
+  {{/if}}
+  Emp Count: {{report.empCount}}&emsp;Billed Count: {{report.billedCount}}&emsp;Vac Count: {{report.vacCount}}&emsp;
+  Vac Days: {{report.vacDays}}<br>
+  {{{report.table}}}
+{{/if}}
+

@@ -1,6 +1,6 @@
 {{#if (not imported)}}
   <h2>Time Report Summary:</h2>
-  {{x-file-input alt="Import Time Report" class="upload" multiple=false action=(action "process") accept="text/csv"}}
+  {{x-file-input alt="Import Time Data" class="upload" multiple=false action=(action "process") accept="text/csv"}}
   {{#if true}}
     &emsp;Debug&nbsp;{{#paper-checkbox value=debug onChange=(action (mut debug))}}{{/paper-checkbox}}
   {{/if}}
@@ -9,6 +9,7 @@
   {{#paper-button raised=true primary=true onClick=(action 'setType' 'YTD')}}YTD{{/paper-button}}
   {{#paper-button raised=true primary=true onClick=(action 'setType' 'MONTH')}}by Month{{/paper-button}}
   {{#paper-button raised=true primary=true onClick=(action 'setType' 'WEEK')}}by Week{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setType' 'DAY')}}by Day{{/paper-button}}
   <br>
   {{#if (eq type 'WEEK')}}
     Report Week:
@@ -33,6 +34,37 @@
       }}
         {{item}}
       {{/paper-select}}&emsp;
+
+  {{else if (eq type 'DAY')}}
+    Report Day:
+      {{#paper-select
+      label="Month"
+      selected=mmSearch
+      options=mmList
+      onChange=(action (mut mmSearch))
+    as |item|
+    }}
+      {{item}}
+    {{/paper-select}}&emsp;
+      {{#paper-select
+        label="Day"
+        selected=ddSearch
+        options=ddList
+        onChange=(action (mut ddSearch))
+      as |item|
+      }}
+        {{item}}
+      {{/paper-select}}&emsp;
+      {{#paper-select
+        label="Year"
+        selected=yySearch
+        options=yyList
+        onChange=(action (mut yySearch))
+      as |item|
+      }}
+        {{item}}
+      {{/paper-select}}&emsp;
+
   {{else if (eq type 'YTD')}}
     Timeframe: YTD&emsp;
   {{/if}}
@@ -71,6 +103,13 @@
       <h2>Timecard Monthly Report&emsp; Month: {{searchMonth}}</h2>
     {{/if}}
 
+  {{else if (eq type 'DAY')}}
+    {{#if update}}
+      <h2>Missing Time Day Report&emsp; Date: {{searchDate}}</h2>
+    {{else}}
+      <h2>Timecard Day Report&emsp; Date: {{searchDate}}</h2>
+    {{/if}}
+
   {{/if}}
   <br>
 
@@ -78,8 +117,20 @@
     <b>Processed Data:</b><br><br>
     {{textarea value=processed rows="8" cols='150'}}<br><br>
   {{/if}}
-  Emp Count: {{report.empCount}}&emsp;Billed Count: {{report.billedCount}}&emsp;Vac Count: {{report.vacCount}}&emsp;
-  Vac Days: {{report.vacDays}}<br>
+  <b>BILLING STATS:</b> Emp Count: {{report.empTot}}&emsp;FT Billing Count: {{report.billCount}}&emsp;
+  Vac/Pers Count: {{report.vacCount}} ({{report.vacDays}}d)&emsp;
+  Lost Days: {{report.lostDays}}&emsp;
+  Bill Avg: {{report.billAvg}}&emsp;Bill Days: {{report.billDays}}<br>
+
+  <b>ALL DATA TOTALS:</b> &emsp;Emp Count: {{report.empTotal}}&emsp;Total Billed Hrs: {{report.billTot}}<br>
+  Flex Earn: {{report.flexEarnedTotal}} ({{report.flexEarnedAvg}}d)&emsp;
+  Flex Used: {{report.flexUsedTotal}} ({{report.flexUsedAvg}}d)&emsp;
+  Vac: {{report.vacTotal}} ({{report.vacAvg}}d)&emsp;
+  Per: {{report.persTotal}} ({{report.persAvg}}d)&emsp;
+  Holidays: {{report.holTotal}} ({{report.holAvg}}d)&emsp;
+  Training: {{report.trainTotal}} ({{report.trainAvg}}d)&emsp;
+  Unpaid: {{report.unpaidTotal}} ({{report.unpaidAvg}}d)&emsp;
+  <br><br>
   {{{report.table}}}
 {{/if}}
 
