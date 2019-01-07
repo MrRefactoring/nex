@@ -69,6 +69,17 @@
     Timeframe: YTD&emsp;
   {{/if}}
 
+  Unit:
+    {{#paper-select
+      label="unit"
+      selected=unitFilter
+      options=units
+      onChange=(action (mut unitFilter))
+    as |item|
+    }}
+      {{item}}
+    {{/paper-select}}&emsp;
+
   Managers:
     {{#paper-select
       label="manager"
@@ -79,10 +90,20 @@
     }}
       {{item}}
     {{/paper-select}}&emsp;
+
+    {{#paper-select
+      label="Year"
+      selected=yySearch
+      options=yearList
+      onChange=(action (mut yySearch))
+    as |item|
+    }}
+      {{item}}
+    {{/paper-select}}&emsp;
   Short Hours Only&nbsp;{{#paper-checkbox value=shortOnly onChange=(action (mut shortOnly))}}{{/paper-checkbox}}&nbsp;
   Hide Disabled&nbsp;{{#paper-checkbox value=hideDisabled onChange=(action (mut hideDisabled))}}{{/paper-checkbox}}&nbsp;
   Exclude Partial Hours&nbsp;{{#paper-checkbox value=excludePartial onChange=(action (mut excludePartial))}}{{/paper-checkbox}}&nbsp;
-
+  CSV&nbsp;{{#paper-checkbox value=csv onChange=(action (mut csv))}}{{/paper-checkbox}}&nbsp;
   {{#if (eq type 'YTD')}}
     {{#if update}}
       <h2>Missing Time YTD Report</h2>
@@ -117,20 +138,27 @@
     <b>Processed Data:</b><br><br>
     {{textarea value=processed rows="8" cols='150'}}<br><br>
   {{/if}}
-  <b>BILLING STATS:</b> Emp Count: {{report.empTot}}&emsp;FT Billing Count: {{report.billCount}}&emsp;
-  Vac/Pers Count: {{report.vacCount}} ({{report.vacDays}}d)&emsp;
-  Lost Days: {{report.lostDays}}&emsp;
-  Bill Avg: {{report.billAvg}}&emsp;Bill Days: {{report.billDays}}<br>
 
-  <b>ALL DATA TOTALS:</b> &emsp;Emp Count: {{report.empTotal}}&emsp;Total Billed Hrs: {{report.billTot}}<br>
-  Flex Earn: {{report.flexEarnedTotal}} ({{report.flexEarnedAvg}}d)&emsp;
-  Flex Used: {{report.flexUsedTotal}} ({{report.flexUsedAvg}}d)&emsp;
-  Vac: {{report.vacTotal}} ({{report.vacAvg}}d)&emsp;
-  Per: {{report.persTotal}} ({{report.persAvg}}d)&emsp;
-  Holidays: {{report.holTotal}} ({{report.holAvg}}d)&emsp;
-  Training: {{report.trainTotal}} ({{report.trainAvg}}d)&emsp;
-  Unpaid: {{report.unpaidTotal}} ({{report.unpaidAvg}}d)&emsp;
-  <br><br>
-  {{{report.table}}}
+  {{#if csv}}
+    {{{report.csvReport}}}
+  {{else}}
+
+    <b>BILLING STATS:</b> &emsp;Emp Count: {{report.empTotal}}&emsp;FT Billing Count: {{report.billCount}}&emsp;
+    Vac/Pers Count: {{report.vacCount}} ({{report.vacDays}}d)&emsp;
+    Lost Days: {{report.lostDays}}d&emsp;
+    Bill Avg: {{report.billAvg}} hr/day&emsp;Avg Bill Days: {{report.billDays}}d<br><br>
+
+    <b>ALL DATA TOTALS:</b> &emsp;Emp Count: {{report.empTotal}}&emsp;
+    Total Billed Hrs: {{report.billTot}} hrs ({{report.billAvgEmp}} hr/emp)&emsp;Total Records: {{report.lineCount}}&emsp;<br>
+    Flex Earn: {{report.flexEarnedTotal}} hrs ({{report.flexEarnedAvg}}d)&emsp;
+    Flex Used: {{report.flexUsedTotal}} hrs ({{report.flexUsedAvg}}d)&emsp;
+    Vac: {{report.vacTotal}} ({{report.vacAvg}}d)&emsp;
+    Per: {{report.persTotal}} ({{report.persAvg}}d)&emsp;
+    Holidays: {{report.holTotal}} ({{report.holAvg}}d)&emsp;
+    Training: {{report.trainTotal}} ({{report.trainAvg}}d)&emsp;
+    Unpaid: {{report.unpaidTotal}} ({{report.unpaidAvg}}d)&emsp;
+    <br><br>
+    {{{report.table}}}
+  {{/if}}
 {{/if}}
 

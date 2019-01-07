@@ -7,12 +7,14 @@ export default Controller.extend({
   debug:false,
   imported:false,
 
-  excludePartial:false,
+  excludePartial:true,
   shortOnly:false,
   hideDisabled:true,
+  csv:false,
   timeData: '',
   refresh:false,
   mgr:'ALL',
+  unitFilter:'ALL',
   mgrList:['ALL'],
   nameList:'',
   type:'YTD',
@@ -22,7 +24,7 @@ export default Controller.extend({
   mmSearch:'01',
   ddSearch:'01',
   yySearch:'2018',
-  weekList: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
+  weekList18: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
     '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
     '03/26/2018 - 04/01/2018','04/02/2018 - 04/08/2018','04/09/2018 - 04/15/2018','04/16/2018 - 04/22/2018',
@@ -36,13 +38,29 @@ export default Controller.extend({
     '11/05/2018 - 11/11/2018','11/12/2018 - 11/18/2018','11/19/2018 - 11/25/2018','11/26/2018 - 12/02/2018',
     '12/03/2018 - 12/09/2018','12/10/2018 - 12/16/2018','12/17/2018 - 12/23/2018','12/24/2018 - 12/30/2018',
   ],
+  weekList19: ['01/01/2019 - 01/06/2019','01/07/2019 - 01/13/2019','01/14/2019 - 01/20/2019','01/21/2019 - 01/27/2019',
+    '01/28/2019 - 02/03/2019','02/04/2019 - 02/10/2019','02/11/2019 - 02/17/2019','02/18/2019 - 02/24/2019',
+    '02/25/2019 - 03/03/2019','03/04/2019 - 03/10/2019','03/11/2019 - 03/17/2019','03/18/2019 - 03/24/2019',
+    '03/25/2019 - 03/31/2019','04/01/2019 - 04/07/2019','04/08/2019 - 04/14/2019','04/15/2019 - 04/21/2019',
+    '04/22/2019 - 04/28/2019','04/29/2019 - 05/05/2019','05/06/2019 - 05/12/2019','05/13/2019 - 05/19/2019',
+    '05/20/2019 - 05/26/2019','05/27/2019 - 06/02/2019','06/03/2019 - 06/09/2019','06/10/2019 - 06/16/2019',
+    '06/17/2019 - 06/23/2019','06/24/2019 - 06/30/2019','07/01/2019 - 07/07/2019','07/08/2019 - 07/14/2019',
+    '07/15/2019 - 07/21/2019','07/22/2019 - 07/28/2019','07/29/2019 - 08/04/2019','08/05/2019 - 08/11/2019',
+    '08/12/2019 - 08/18/2019','08/19/2019 - 08/25/2019','08/26/2019 - 09/01/2019','09/02/2019 - 09/08/2019',
+    '09/09/2019 - 09/15/2019','09/16/2019 - 09/22/2019','09/23/2019 - 09/29/2019','09/30/2019 - 10/06/2019',
+    '10/07/2019 - 10/13/2019','10/14/2019 - 10/20/2019','10/21/2019 - 10/27/2019','10/28/2019 - 11/03/2019',
+    '11/04/2019 - 11/10/2019','11/11/2019 - 11/17/2019','11/18/2019 - 11/24/2019','11/25/2019 - 12/01/2019',
+    '12/02/2019 - 12/08/2019','12/09/2019 - 12/15/2019','12/16/2019 - 12/22/2019','12/23/2019 - 12/29/2019',
+  ],
   monthList:[1,2,3,4,5,6,7,8,9,10,11,12],
+  yearList:['2018','2019'],
   mmList:['01','02','03','04','05','06','07','08','09','10','11','12'],
   ddList:['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20',
           '21','22','23','24','25','26','27','28','29','30','31'],
   yyList:['2018','2019','2020'],
-  update: computed('searchWeek', 'searchMonth','searchDate','mgr','shortOnly', 'hideDisabled', 'excludePartial',
-    'type', function () {
+  units:['ALL','Unit 1 - RF','Unit 2 - AS','Unit 5 - JI'],
+  update: computed('searchWeek', 'searchMonth','searchDate','yySearch','mgr','shortOnly', 'hideDisabled',
+    'excludePartial', 'type', 'unitFilter', function () {
     console.log('Update');
     this.send('filter');
     return this.get('shortOnly');
@@ -50,6 +68,10 @@ export default Controller.extend({
   searchDate: computed('mmSearch', 'ddSearch','yySearch', function () {
       return this.get('mmSearch')+'/'+this.get('ddSearch')+'/'+this.get('yySearch');
     }),
+  weekList: computed('yySearch', function () {
+    if (this.get('yySearch')==='2018') {return this.get('weekList18');}
+    else return this.get('weekList19');
+  }),
   actions: {
     loadData(data){
       console.log('loadData');
@@ -132,6 +154,7 @@ export default Controller.extend({
       let draftHrs={};
       let billingDays={};
       let billingCount={};
+      let csvReport='';
 
       // For Importing Data
       let str1='';
@@ -248,20 +271,19 @@ export default Controller.extend({
 
         if (name === 'User') header = true;
 
-        if (!header) {
-          mgrLookup[name] = mgr;  //build manager lookup table
-        }
+        let dateMatch=(byWeek && week===self.get('searchWeek')) ||
+          (byDay && date===self.get('searchDate')) ||
+          (byYTD) ||
+          (byMonth && self.get('searchMonth')===mm);
+
+        let unitMatch=(self.get('unitFilter')==='ALL' || self.get('unitFilter')===unit);
 
         // Save data for current week / YTD
-        let matched=(!header) &&
-          (
-            (byWeek && week===self.get('searchWeek')) ||
-            (byDay && date===self.get('searchDate')) ||
-            (byYTD) ||
-            (byMonth && self.get('searchMonth')===mm)
-          );
+        let matched=(!header) && dateMatch && unitMatch;
 
         if (matched) {
+          mgrLookup[name] = mgr;  //build manager lookup table
+
           if (count <= 10) {
             str2 = str2 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
           }
@@ -307,6 +329,15 @@ export default Controller.extend({
           else if (project === '~UT999 - Unpaid Time Off') {
             addVal(unpaid, name, hours);
           }
+          else if (project === '~LOA999 - Leave of Absence') {
+            addVal(unpaid, name, hours);  //LOA = unpaid
+          }
+          else if (project === '~OH999 - Overhead') {
+            // do nothing
+          }
+          else if (project === '~IV999 - Interviewing') {
+            // do nothing
+          }
           else if (billable === 'No') {
             addVal(nonBillable, name, hours);
           }
@@ -345,11 +376,14 @@ export default Controller.extend({
 
       // Final List
       let report = '';
+      let csvData='';
+
       mgrList.forEach(function (mgr) {
         if (self.get('mgr') === 'ALL' || self.get('mgr') === mgr) {
 
           let header = '';
           let tableData = '';
+
           // Create Header Rows
           header = header + '<table style="width:70%">';
           header = header + '<tr>' + '<th style="width:25%">' + 'Manager: ' + mgr + '</th>';
@@ -371,6 +405,9 @@ export default Controller.extend({
           header = header + '<th style="text-align: center;width:5%">Bill Days</th>';
           header = header + '<th style="text-align: center;width:5%">Bill Avg</th>';
           header = header + '</tr>';
+
+          let csvHeader= 'Employee,Manager,APPROVED,submit,Draft,Rej,Total,Billed,Vac,Per,Hol,Net Flex,Flex Earned,Flex Taken,'+
+            'Train,Unpaid,Other Unbilled,Bill Days,Bill Avg<br>';
 
           nameList.forEach(function (name) {
             if (mgrLookup[name] === mgr) {
@@ -480,6 +517,29 @@ export default Controller.extend({
                   tableData = tableData + '<td' + style + '>' + get(billingDays[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + billAvg + '</td>';
                   tableData = tableData + '</tr>';
+
+
+                  csvData = csvData + name + ',';
+                  csvData = csvData + mgr + ',';
+                  csvData = csvData + get(approvedHrs[name]) + ',';
+                  csvData = csvData + get(submittedHrs[name]) + ',';
+                  csvData = csvData + get(draftHrs[name]) + ',';
+                  csvData = csvData + get(rejectedHrs[name]) + ',';
+                  csvData = csvData + get(totalHrs[name]) + ',';
+                  csvData = csvData + get(billedHrs[name]) + ',';
+                  csvData = csvData + get(vacation[name]) + ',';
+                  csvData = csvData + get(personal[name]) + ',';
+                  csvData = csvData + get(holidays[name]) + ',';
+                  csvData = csvData + get(netFlex[name]) + ',';
+                  csvData = csvData + get(flexEarned[name]) + ',';
+                  csvData = csvData + get(flexUsed[name]) + ',';
+                  csvData = csvData + get(training[name]) + ',';
+                  csvData = csvData + get(unpaid[name]) + ',';
+                  csvData = csvData + get(nonBillable[name]) + ',';
+                  csvData = csvData + get(billingDays[name]) + ',';
+                  csvData = csvData + billAvg + '<br>';
+
+
                 }
               }
             }
@@ -488,6 +548,8 @@ export default Controller.extend({
           if (tableData !== '') {
             report = report + header + tableData + '</table>' + '<br>';
           }
+
+          csvReport = csvHeader+csvData;
         }
       });
 
@@ -508,6 +570,12 @@ export default Controller.extend({
       if (billHrCount>0){
         billAvg = billHrTotal/billHrCount;
         billAvg=billAvg.toFixed(2);
+      }
+
+      let billAvgEmp=0.0;
+      if (empTot>0){
+        billAvgEmp = billTot/empTot;
+        billAvgEmp=billAvgEmp.toFixed(0);
       }
 
       let billDays=0.0;
@@ -563,7 +631,8 @@ export default Controller.extend({
         flexUsedTotal:flexUsedTot, flexEarnedTotal:flexEarnTot,vacTotal:vacTot,persTotal:persTot,
         flexUsedAvg:flexUsedAvg, flexEarnedAvg:flexEarnAvg,vacAvg:vacAvg,persAvg:persAvg,
         holTotal:holTot, holAvg:holAvg,trainTotal:trainTot, trainAvg:trainAvg, billTot:billTot.toFixed(0),
-        empTotal:empTot, unpaidTotal:unpaidTot, unpaidAvg:unpaidAvg,
+        empTotal:empTot, unpaidTotal:unpaidTot, unpaidAvg:unpaidAvg, lineCount:count, billAvgEmp:billAvgEmp,
+        csvReport: csvReport
       });
     },
     process([file]) {
