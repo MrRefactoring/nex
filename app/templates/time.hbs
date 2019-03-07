@@ -57,9 +57,9 @@
       {{/paper-select}}&emsp;
       {{#paper-select
         label="Year"
-        selected=yySearch
-        options=yyList
-        onChange=(action (mut yySearch))
+        selected=yyyySearch
+        options=yyyyList
+        onChange=(action (mut yyyySearch))
       as |item|
       }}
         {{item}}
@@ -93,9 +93,9 @@
 
     {{#paper-select
       label="Year"
-      selected=yySearch
-      options=yearList
-      onChange=(action (mut yySearch))
+      selected=yyyySearch
+      options=yyyyList
+      onChange=(action (mut yyyySearch))
     as |item|
     }}
       {{item}}
@@ -103,7 +103,7 @@
   Short Hours Only&nbsp;{{#paper-checkbox value=shortOnly onChange=(action (mut shortOnly))}}{{/paper-checkbox}}&nbsp;
   Hide Disabled&nbsp;{{#paper-checkbox value=hideDisabled onChange=(action (mut hideDisabled))}}{{/paper-checkbox}}&nbsp;
   Exclude Partial Hours&nbsp;{{#paper-checkbox value=excludePartial onChange=(action (mut excludePartial))}}{{/paper-checkbox}}&nbsp;
-  CSV&nbsp;{{#paper-checkbox value=csv onChange=(action (mut csv))}}{{/paper-checkbox}}&nbsp;
+  {{#paper-button raised=true primary=true onClick=(action 'exportCSV')}}EXPORT CSV{{/paper-button}}&nbsp;
   {{#if (eq type 'YTD')}}
     {{#if update}}
       <h2>Missing Time YTD Report</h2>

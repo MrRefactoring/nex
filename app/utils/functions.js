@@ -1,4 +1,4 @@
-export {clipText,dayValue,getDay, getMonth, getMonthName, getToday,getTodaySortable, getYear, properCase,
+export {clipText,dayValue,getDay, getMonth, getMonthName, getToday, getTodaysMonth, getTodaySortable, getYear, properCase,
   readOnly,sendEmail,sendRecruitingEmail,setDlgComment,setDlgEdit,setDlgEditLarge,setDlgDropdown,truncLink,truncNum,truncText};
 
 function clipText(text, count) {
@@ -111,6 +111,11 @@ function getToday(zeroPadDate=false) {
 
   today = mm + '/' + dd + '/' + yyyy;
   return today;
+}
+
+function getTodaysMonth(zeroPadDate=false) {
+  let today = new Date();
+  return today.getMonth() + 1; //January is 0!
 }
 
 function getTodaySortable() {

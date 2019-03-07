@@ -20,6 +20,8 @@
       {{item}}
     {{/paper-select}}&emsp;
   Hide Disabled Employees&nbsp;{{#paper-checkbox value=hideDisabled onChange=(action (mut hideDisabled))}}{{/paper-checkbox}}&nbsp;
+  {{#paper-button raised=true primary=true onClick=(action 'exportCSV')}}EXPORT CSV{{/paper-button}}&nbsp;
+
 {{#if update}}
   <h2>Timecard YTD Report</h2>
 {{else}}
@@ -34,6 +36,11 @@
   {{/if}}
   Emp Count: {{report.empCount}}&emsp;Billed Count: {{report.billedCount}}&emsp;Vac Count: {{report.vacCount}}&emsp;
   Vac Days: {{report.vacDays}}<br>
-  {{{report.table}}}
+
+  {{#if csv}}
+    <br>{{{report.csvReport}}}
+  {{else}}
+    {{{report.table}}}
+  {{/if}}
 {{/if}}
 

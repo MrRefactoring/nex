@@ -1,16 +1,16 @@
 import { computed } from '@ember/object';
 import Controller from '@ember/controller';
-import {getTodaySortable} from '../utils/functions';
+import {getTodaySortable, getTodaysMonth} from '../utils/functions';
+import FileSaverMixin from 'ember-cli-file-saver/mixins/file-saver';
 
-export default Controller.extend({
+export default Controller.extend(FileSaverMixin, {
   processed:'',
   debug:false,
   imported:false,
 
-  excludePartial:true,
+  excludePartial:false,
   shortOnly:false,
   hideDisabled:true,
-  csv:false,
   timeData: '',
   refresh:false,
   mgr:'ALL',
@@ -19,11 +19,12 @@ export default Controller.extend({
   nameList:'',
   type:'YTD',
   report:'',
-  searchWeek:'02/26/2018 - 03/04/2018',
+  csvOutput:'',
+  searchWeek:'01/07/2019 - 01/12/2019',
   searchMonth:1,
   mmSearch:'01',
   ddSearch:'01',
-  yySearch:'2018',
+  yyyySearch:2019,
   weekList18: ['01/01/2018 - 01/07/2018','01/08/2018 - 01/14/2018','01/15/2018 - 01/21/2018','01/22/2018 - 01/28/2018',
     '01/29/2018 - 02/04/2018','02/05/2018 - 02/11/2018','02/12/2018 - 02/18/2018','02/19/2018 - 02/25/2018',
     '02/26/2018 - 03/04/2018','03/05/2018 - 03/11/2018','03/12/2018 - 03/18/2018','03/19/2018 - 03/25/2018',
@@ -38,7 +39,7 @@ export default Controller.extend({
     '11/05/2018 - 11/11/2018','11/12/2018 - 11/18/2018','11/19/2018 - 11/25/2018','11/26/2018 - 12/02/2018',
     '12/03/2018 - 12/09/2018','12/10/2018 - 12/16/2018','12/17/2018 - 12/23/2018','12/24/2018 - 12/30/2018',
   ],
-  weekList19: ['01/01/2019 - 01/06/2019','01/07/2019 - 01/13/2019','01/14/2019 - 01/20/2019','01/21/2019 - 01/27/2019',
+  weekList19: ['12/31/2018 - 01/06/2019','01/07/2019 - 01/13/2019','01/14/2019 - 01/20/2019','01/21/2019 - 01/27/2019',
     '01/28/2019 - 02/03/2019','02/04/2019 - 02/10/2019','02/11/2019 - 02/17/2019','02/18/2019 - 02/24/2019',
     '02/25/2019 - 03/03/2019','03/04/2019 - 03/10/2019','03/11/2019 - 03/17/2019','03/18/2019 - 03/24/2019',
     '03/25/2019 - 03/31/2019','04/01/2019 - 04/07/2019','04/08/2019 - 04/14/2019','04/15/2019 - 04/21/2019',
@@ -53,26 +54,28 @@ export default Controller.extend({
     '12/02/2019 - 12/08/2019','12/09/2019 - 12/15/2019','12/16/2019 - 12/22/2019','12/23/2019 - 12/29/2019',
   ],
   monthList:[1,2,3,4,5,6,7,8,9,10,11,12],
-  yearList:['2018','2019'],
   mmList:['01','02','03','04','05','06','07','08','09','10','11','12'],
   ddList:['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20',
           '21','22','23','24','25','26','27','28','29','30','31'],
-  yyList:['2018','2019','2020'],
+  yyyyList:[2018,2019,2020],
   units:['ALL','Unit 1 - RF','Unit 2 - AS','Unit 5 - JI'],
-  update: computed('searchWeek', 'searchMonth','searchDate','yySearch','mgr','shortOnly', 'hideDisabled',
+  update: computed('searchWeek', 'searchMonth','searchDate','yyyySearch','mgr','shortOnly', 'hideDisabled',
     'excludePartial', 'type', 'unitFilter', function () {
     console.log('Update');
     this.send('filter');
     return this.get('shortOnly');
   }),
-  searchDate: computed('mmSearch', 'ddSearch','yySearch', function () {
-      return this.get('mmSearch')+'/'+this.get('ddSearch')+'/'+this.get('yySearch');
+  searchDate: computed('mmSearch', 'ddSearch','yyyySearch', function () {
+      return this.get('mmSearch')+'/'+this.get('ddSearch')+'/'+this.get('yyyySearch');
     }),
-  weekList: computed('yySearch', function () {
-    if (this.get('yySearch')==='2018') {return this.get('weekList18');}
+  weekList: computed('yyyySearch', function () {
+    if (this.get('yyyySearch')===2018) {return this.get('weekList18');}
     else return this.get('weekList19');
   }),
   actions: {
+    exportCSV(){
+      this.saveFileAs('nex_'+getTodaySortable()+'.csv', this.get('report.csvReport'), 'text');
+    },
     loadData(data){
       console.log('loadData');
       this.set('timeData',data);
@@ -90,9 +93,8 @@ export default Controller.extend({
       lines.forEach(function (line) {
         let name = '';
         let mgr = '';
-        line = line.replace(/","/g, "^");  //change <","> to <^>
-        line = line.replace(/"/g, "");       //remove <">
-        let importData = line.split('^');  //split on <^>
+
+        let importData = parseCSV(line);
         let i = 0;  // data field count
 
         importData.forEach(function (item) {
@@ -193,9 +195,9 @@ export default Controller.extend({
       lines.forEach(function (line) {
         let header=false;
         hours=0;
-        line = line.replace(/","/g,"^");  //change <","> to <^>
-        line = line.replace(/"/g,"");       //remove <">
-        let importData = line.split('^');  //split on <^>
+
+        let importData = parseCSV(line);
+
         let i = 0;  // data field count
 
         // Read "0Unit","1Name","2Agency","3Project","4Emp Type","5Emp Band","6Date","7Billable","8Status",
@@ -273,8 +275,8 @@ export default Controller.extend({
 
         let dateMatch=(byWeek && week===self.get('searchWeek')) ||
           (byDay && date===self.get('searchDate')) ||
-          (byYTD) ||
-          (byMonth && self.get('searchMonth')===mm);
+          (byYTD && self.get('yyyySearch')===yyyy) ||
+          (byMonth && self.get('searchMonth')===mm && self.get('yyyySearch')===yyyy);
 
         let unitMatch=(self.get('unitFilter')==='ALL' || self.get('unitFilter')===unit);
 
@@ -407,7 +409,7 @@ export default Controller.extend({
           header = header + '</tr>';
 
           let csvHeader= 'Employee,Manager,APPROVED,submit,Draft,Rej,Total,Billed,Vac,Per,Hol,Net Flex,Flex Earned,Flex Taken,'+
-            'Train,Unpaid,Other Unbilled,Bill Days,Bill Avg<br>';
+            'Train,Unpaid,Other Unbilled,Bill Days,Bill Avg\n';
 
           nameList.forEach(function (name) {
             if (mgrLookup[name] === mgr) {
@@ -446,11 +448,18 @@ export default Controller.extend({
               }
 
               else if (self.get('type')==='YTD') {
-                if (parseInt(get(approvedHrs[name])) < 1600) {
+                console.log(name+': '+ getInt(approvedHrs[name]) + ' ' + getInt(billedHrs[name]));
+
+                let minBilled=(getTodaysMonth()-1)*145;
+                let minApproved=(getTodaysMonth()-1)*165;
+                let max=(getTodaysMonth()-1)*175;
+
+                if (getInt(approvedHrs[name]) < minApproved ||
+                  getInt(billedHrs[name]) < minBilled)  {
                   nameStyle = ' style="color:red"';
                   partial=true;
                 }
-                else if (parseInt(get(approvedHrs[name])) > 2000) {
+                else if (parseInt(get(approvedHrs[name])) > max) {
                   nameStyle = ' style="color:blue"';
                 }
               }
@@ -537,7 +546,7 @@ export default Controller.extend({
                   csvData = csvData + get(unpaid[name]) + ',';
                   csvData = csvData + get(nonBillable[name]) + ',';
                   csvData = csvData + get(billingDays[name]) + ',';
-                  csvData = csvData + billAvg + '<br>';
+                  csvData = csvData + billAvg + '\n';
 
 
                 }
@@ -682,6 +691,11 @@ function get(val){
   else return val;
 }
 
+function getInt(val){
+  if (typeof val === 'undefined') {return 0;}
+  else return parseInt(val);
+}
+
 function sorted(assoc) {
   let str='';
   let arr = []; // Array
@@ -713,4 +727,48 @@ function getKeys(assoc){
     arr.push(item);
   });
   return arr;
+}
+
+function parseCSV(str) {
+  let arr = [];
+  let quote = false;  // true means we're inside a quoted field
+
+  // iterate over each character, keep track of current row and column (of the returned array)
+  let col = 0;
+
+  for (let c = 0; c < str.length; c++) {
+    let cc = str[c], nc = str[c+1];        // current character, next character
+    arr[col] = arr[col] || '';   // create a new column (start with empty string) if necessary
+
+    // If the current character is a quotation mark, and we're inside a
+    // quoted field, and the next character is also a quotation mark,
+    // add a quotation mark to the current column and skip the next character
+    if (cc === '"' && quote && nc === '"') { arr[col] += cc; ++c; continue; }
+
+    // If it's just one quotation mark, begin/end quoted field
+    if (cc === '"') { quote = !quote; continue; }
+
+    // If it's a comma and we're not in a quoted field, move on to the next column
+    if (cc === ',' && !quote) { ++col; continue; }
+
+    // If it's a newline (CRLF) and we're not in a quoted field,
+    // end parsing the line
+    if (cc === '\r' && nc === '\n' && !quote) { break; }
+
+    // If it's a newline (LF or CR) and we're not in a quoted field,
+    // end parsing this line (separated from above in case we want to handle separately later)
+    if (cc === '\n' && !quote) { break; }
+    if (cc === '\r' && !quote) { break; }
+
+    // Otherwise, append the current character to the current column
+    arr[col] += cc;
+  }
+  return arr;
+}
+
+function oldParse(str){
+  str = str.replace(/","/g,"^");  //change <","> to <^>
+  str = str.replace(/"/g,"");       //remove <">
+
+  return  str.split('^');  //split on <^>
 }

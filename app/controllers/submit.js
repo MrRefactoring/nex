@@ -1,12 +1,14 @@
 import { computed } from '@ember/object';
 import Controller from '@ember/controller';
 import {getTodaySortable} from '../utils/functions';
+import FileSaverMixin from 'ember-cli-file-saver/mixins/file-saver';
 
-export default Controller.extend({
+export default Controller.extend(FileSaverMixin, {
   processed:'',
   debug:false,
   imported:false,
 
+  csv:false,
   hideDisabled:true,
   timeData: '',
   refresh:false,
@@ -20,6 +22,9 @@ export default Controller.extend({
     return this.get('hideDisabled');
   }),
   actions: {
+    exportCSV(){
+      this.saveFileAs('late-report_'+getTodaySortable()+'.csv', this.get('report.csvReport'), 'text');
+    },
     loadData(data){
       console.log('loadData');
       this.set('timeData',data);
@@ -98,6 +103,7 @@ export default Controller.extend({
       let training={};
       let submitCount={};
       let submitTimeDelta={};
+      let csvReport='';
 
       // For Importing Data
       let str1='';
@@ -296,11 +302,14 @@ export default Controller.extend({
 
       // Final List
       let report = '';
+      let csvData='';
+
       mgrList.forEach(function (mgr) {
         if (self.get('mgr') === 'ALL' || self.get('mgr') === mgr) {
 
           let header = '';
           let tableData = '';
+
           // Create Header Rows
           header = header + '<table style="width:70%">';
           header = header + '<tr>' + '<th style="width:25%">' + 'Manager: ' + mgr + '</th>';
@@ -311,8 +320,9 @@ export default Controller.extend({
           header = header + '<th style="text-align: center;width:5%">Submits</th>';
           header = header + '<th style="text-align: center;width:5%">Total Delta</th>';
           header = header + '<th style="text-align: center;width:5%">Avg Delay</th>';
-
           header = header + '</tr>';
+
+          let csvHeader= 'Employee,Manager,APPROVED,Total,Billed,Non-Bill,Submits,Delta,Avg_Delay\n';
 
           nameList.forEach(function (name) {
             if (mgrLookup[name] === mgr) {
@@ -354,8 +364,17 @@ export default Controller.extend({
                   tableData = tableData + '<td' + style + '>' + get(submitCount[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + get(submitTimeDelta[name]) + '</td>';
                   tableData = tableData + '<td' + style + '>' + submitAvg + '</td>';
-
                   tableData = tableData + '</tr>';
+
+                  csvData = csvData + name + ',';
+                  csvData = csvData + mgr + ',';
+                  csvData = csvData + get(approvedHrs[name]) + ',';
+                  csvData = csvData + get(totalHrs[name]) + ',';
+                  csvData = csvData + get(billedHrs[name]) + ',';
+                  csvData = csvData + get(nonBillable[name]) + ',';
+                  csvData = csvData + get(submitCount[name]) + ',';
+                  csvData = csvData + get(submitTimeDelta[name]) + ',';
+                  csvData = csvData + submitAvg + '\n';
                 }
               }
             }
@@ -364,6 +383,7 @@ export default Controller.extend({
           if (tableData !== '') {
             report = report + header + tableData + '</table>' + '<br>';
           }
+          csvReport = csvHeader+csvData;
         }
       });
 
@@ -376,7 +396,7 @@ export default Controller.extend({
 
 
       this.set('report',{table:report, empCount:empCount, billedCount:billedCount, vacCount:vacCount,
-                          vacDays:vacDays});
+                          vacDays:vacDays, csvReport: csvReport});
     },
     process([file]) {
       let self = this;
