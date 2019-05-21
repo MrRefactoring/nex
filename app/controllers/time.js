@@ -20,7 +20,7 @@ export default Controller.extend(FileSaverMixin, {
   type:'YTD',
   report:'',
   csvOutput:'',
-  searchWeek:'01/07/2019 - 01/12/2019',
+  searchWeek:'01/07/2019 - 01/13/2019',
   searchMonth:1,
   mmSearch:'01',
   ddSearch:'01',
@@ -59,8 +59,8 @@ export default Controller.extend(FileSaverMixin, {
           '21','22','23','24','25','26','27','28','29','30','31'],
   yyyyList:[2018,2019,2020],
   units:['ALL','Unit 1 - RF','Unit 2 - AS','Unit 5 - JI'],
-  update: computed('searchWeek', 'searchMonth','searchDate','yyyySearch','mgr','shortOnly', 'hideDisabled',
-    'excludePartial', 'type', 'unitFilter', function () {
+  update: computed('searchWeek', 'searchMonth', 'searchDate','yyyySearch','mgr',
+    'shortOnly', 'hideDisabled', 'excludePartial', 'type', 'unitFilter', function () {
     console.log('Update');
     this.send('filter');
     return this.get('shortOnly');
@@ -76,38 +76,38 @@ export default Controller.extend(FileSaverMixin, {
     exportCSV(){
       this.saveFileAs('nex_'+getTodaySortable()+'.csv', this.get('report.csvReport'), 'text');
     },
-    loadData(data){
+    loadData(fileData){
       console.log('loadData');
-      this.set('timeData',data);
+      this.set('timeData',fileData);
       this.set('imported',true);
-      this.send('getEmployees',data);
+      this.send('getEmployees',fileData);
       this.send('filter');
     },
-    getEmployees(data){
+    getEmployees(fileData){
       console.log('getEmployees');
       let nameList={};
       let mgrList={};
       let mgrLookup={};
 
-      let lines = data.split('\n');
+      let lines = fileData.split('\n');
       lines.forEach(function (line) {
         let name = '';
         let mgr = '';
 
         let importData = parseCSV(line);
-        let i = 0;  // data field count
+        let itemCount = 0;  // data field count
 
         importData.forEach(function (item) {
           item = item.trim();
           item = item.replace(/, /g, "_"); //replace <,>with <_>
 
-          if (i === 1) {
+          if (itemCount === 1) {
             name = item;
           }
-          else if (i === 11) {
+          else if (itemCount === 12) {
             mgr = item;
           }
-          i++;
+          itemCount++;
         });
         if (name !== 'User') {
           nameList[name] = name;
@@ -163,7 +163,7 @@ export default Controller.extend(FileSaverMixin, {
       let str2 = '';
       let strDetail='';
       let lines = data.split('\n');
-      let count = 1;
+      let lineCount = 1;
 
       // TOTALS
       let vacCount=0;
@@ -184,6 +184,7 @@ export default Controller.extend(FileSaverMixin, {
       let unpaidTot=0;
 
       // flags
+      let byBlock = this.get('type')==='BLOCK';
       let byDay = this.get('type')==='DAY';
       let byWeek = this.get('type')==='WEEK';
       let byMonth = this.get('type')==='MONTH';
@@ -197,8 +198,7 @@ export default Controller.extend(FileSaverMixin, {
         hours=0;
 
         let importData = parseCSV(line);
-
-        let i = 0;  // data field count
+        let itemCount = 0;  // data field count
 
         // Read "0Unit","1Name","2Agency","3Project","4Emp Type","5Emp Band","6Date","7Billable","8Status",
         // "9Memo","10Duration","11Mgr","12Rejection Comment","13(1)Run Date ","14(2)Run Date ",
@@ -208,62 +208,71 @@ export default Controller.extend(FileSaverMixin, {
           item=item.trim();
           item = item.replace(/, /g,"_"); //replace <,>with <_>
 
-          if (i === 0) {
+          if (itemCount === 0) {
             unit = item;
           }
-          else if (i === 1) {
+          else if (itemCount === 1) {
             name = item;
           }
-          else if (i === 2) {
+          else if (itemCount === 2) {
             //agency
           }
-          else if (i === 3) {
+          else if (itemCount === 3) {
             project = item;
           }
-          else if (i === 4) {
+          else if (itemCount === 4) {
             //emp_type;
           }
-          else if (i === 5) {
+          else if (itemCount === 5) {
             //emp_band;
           }
-          else if (i === 6) {
+          else if (itemCount === 6) {
+            //User-Function;
+          }
+          else if (itemCount === 7) {
             date= item;
           }
-          else if (i === 7) {
+          else if (itemCount === 8) {
             billable = item;
           }
-          else if (i === 8) {
+          else if (itemCount === 9) {
             status = item;
           }
-          else if (i === 9) {
+          else if (itemCount === 10) {
             memo = item;
           }
-          else if (i === 10) {
+          else if (itemCount === 11) {
             hours = item;
           }
-          else if (i === 11) {
+          else if (itemCount === 12) {
             mgr = item;
           }
-          else if (i === 12) {
+          else if (itemCount === 13) {
             //rej comments
           }
-          else if (i === 13) {
+          else if (itemCount === 14) {
             //export date 1
           }
-          else if (i === 14) {
-            //export date 2
-          }
-          else if (i === 15) {
-            //creation date
-          }
-          else if (i === 16) {
+          else if (itemCount === 15) {
             week = item;
           }
-          else if (i === 17) {
+          else if (itemCount === 16) {
+            //creation date
+          }
+          else if (itemCount === 17) {
+            //submission date
+          }
+          else if (itemCount === 18) {
+            //Approval
+          }
+          else if (itemCount === 19) {
             //last edit
           }
+          else if (itemCount === 20) {
+            //country
+          }
 
-          i++;
+          itemCount++;
         });
 
         let dateData = date.split('/');
@@ -280,17 +289,19 @@ export default Controller.extend(FileSaverMixin, {
 
         let unitMatch=(self.get('unitFilter')==='ALL' || self.get('unitFilter')===unit);
 
+        if (lineCount<10) {console.log(dateMatch+" "+unitMatch+" "+header);}
+
         // Save data for current week / YTD
         let matched=(!header) && dateMatch && unitMatch;
 
         if (matched) {
           mgrLookup[name] = mgr;  //build manager lookup table
 
-          if (count <= 10) {
-            str2 = str2 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
+          if (lineCount <= 10) {
+            str2 = str2 + lineCount + ` ADDED: ${name},${project},${date},${hours},${mgr},${week}\n`;
           }
-          str1 = str1 + count + ` ADDED: ${name},${project},${date},${hours},${mgr},${week},${billable}\n`;
-          if (count === 1) {
+          str1 = str1 + lineCount + ` ADDED: ${name},${project},${date},${hours},${mgr},${week},${billable}\n`;
+          if (lineCount === 1) {
             strDetail = strDetail + 'TIMECARD IMPORT DETAIL:\n';
             strDetail = strDetail + 'UNIT: ' + unit + '\n';
             strDetail = strDetail + 'NAME: ' + name + '\n';
@@ -303,7 +314,7 @@ export default Controller.extend(FileSaverMixin, {
             strDetail = strDetail + 'MGR: ' + mgr + '\n';
             strDetail = strDetail + 'WEEK: ' + week + '\n';
           }
-          count++;
+          lineCount++;
 
           if (project === '~VA999 - Vacation') {
             addVal(vacation, name, hours);
@@ -452,15 +463,16 @@ export default Controller.extend(FileSaverMixin, {
 
                 let minBilled=(getTodaysMonth()-1)*145;
                 let minApproved=(getTodaysMonth()-1)*165;
-                let max=(getTodaysMonth()-1)*175;
+                let max=(getTodaysMonth()-1)*200;
 
                 if (getInt(approvedHrs[name]) < minApproved ||
                   getInt(billedHrs[name]) < minBilled)  {
                   nameStyle = ' style="color:red"';
                   partial=true;
                 }
-                else if (parseInt(get(approvedHrs[name])) > max) {
+                else if (parseInt(get(billedHrs[name])) > max) {
                   nameStyle = ' style="color:blue"';
+                  console.log('MAX='+max);
                 }
               }
 
@@ -495,7 +507,7 @@ export default Controller.extend(FileSaverMixin, {
                   billTot+=get(billedHrs[name]);
                   unpaidTot+=get(unpaid[name]);
 
-                  if (byDay || (byWeek && billDays>4) || (byMonth && billDays>16) || (byYTD && billDays>185)) {
+                  if (byDay || (byWeek && billDays>4) || (byMonth && billDays>16) || (byYTD && billDays>185)){
                     billDaysTotal = billDaysTotal + billDays;
                     billDaysCount++;
                   }
@@ -640,7 +652,7 @@ export default Controller.extend(FileSaverMixin, {
         flexUsedTotal:flexUsedTot, flexEarnedTotal:flexEarnTot,vacTotal:vacTot,persTotal:persTot,
         flexUsedAvg:flexUsedAvg, flexEarnedAvg:flexEarnAvg,vacAvg:vacAvg,persAvg:persAvg,
         holTotal:holTot, holAvg:holAvg,trainTotal:trainTot, trainAvg:trainAvg, billTot:billTot.toFixed(0),
-        empTotal:empTot, unpaidTotal:unpaidTot, unpaidAvg:unpaidAvg, lineCount:count, billAvgEmp:billAvgEmp,
+        empTotal:empTot, unpaidTotal:unpaidTot, unpaidAvg:unpaidAvg, lineCount:lineCount, billAvgEmp:billAvgEmp,
         csvReport: csvReport
       });
     },

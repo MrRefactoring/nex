@@ -25,39 +25,38 @@ export default Controller.extend(FileSaverMixin, {
     exportCSV(){
       this.saveFileAs('late-report_'+getTodaySortable()+'.csv', this.get('report.csvReport'), 'text');
     },
-    loadData(data){
+    loadData(fileData){
       console.log('loadData');
-      this.set('timeData',data);
+      this.set('timeData',fileData);
       this.set('imported',true);
-      this.send('getEmployees',data);
+      this.send('getEmployees',fileData);
       this.send('filter');
     },
-    getEmployees(data){
+    getEmployees(fileData){
       console.log('getEmployees');
       let nameList={};
       let mgrList={};
       let mgrLookup={};
 
-      let lines = data.split('\n');
+      let lines = fileData.split('\n');
       lines.forEach(function (line) {
         let name = '';
         let mgr = '';
-        line = line.replace(/","/g, "^");  //change <","> to <^>
-        line = line.replace(/"/g, "");       //remove <">
-        let importData = line.split('^');  //split on <^>
-        let i = 0;  // data field count
+
+        let importData = parseCSV(line);
+        let itemCount = 0;  // data field count
 
         importData.forEach(function (item) {
           item = item.trim();
           item = item.replace(/, /g, "_"); //replace <,>with <_>
 
-          if (i === 1) {
+          if (itemCount === 1) {
             name = item;
           }
-          else if (i === 11) {
+          else if (itemCount === 12) {
             mgr = item;
           }
-          i++;
+          itemCount++;
         });
         if (name !== 'User') {
           nameList[name] = name;
@@ -127,10 +126,9 @@ export default Controller.extend(FileSaverMixin, {
       lines.forEach(function (line) {
         let header=false;
         hours=0;
-        line = line.replace(/","/g,"^");  //change <","> to <^>
-        line = line.replace(/"/g,"");       //remove <">
-        let importData = line.split('^');  //split on <^>
-        let i = 0;  // data field count
+
+        let importData = parseCSV(line);
+        let itemCount = 0;  // data field count
 
         // Read "0Unit","1Name","2Agency","3Project","4Emp Type","5Emp Band","6Date","7Billable","8Status",
         // "9Memo","10Duration","11Mgr","12Rejection Comment","13(1)Run Date ","14(2)Run Date ",
@@ -140,71 +138,71 @@ export default Controller.extend(FileSaverMixin, {
           item=item.trim();
           item = item.replace(/, /g,"_"); //replace <,>with <_>
 
-          if (i === 0) {
+          if (itemCount === 0) {
             unit = item;
           }
-          else if (i === 1) {
+          else if (itemCount === 1) {
             name = item;
           }
-          else if (i === 2) {
+          else if (itemCount === 2) {
             //agency
           }
-          else if (i === 3) {
+          else if (itemCount === 3) {
             project = item;
           }
-          else if (i === 4) {
+          else if (itemCount === 4) {
             //emp_type;
           }
-          else if (i === 5) {
+          else if (itemCount === 5) {
             //emp_band;
           }
-          else if (i === 6) {
+          else if (itemCount === 6) {
+            //User-Function;
+          }
+          else if (itemCount === 7) {
             date= item;
           }
-          else if (i === 7) {
+          else if (itemCount === 8) {
             billable = item;
           }
-          else if (i === 8) {
+          else if (itemCount === 9) {
             status = item;
           }
-          else if (i === 9) {
+          else if (itemCount === 10) {
             memo = item;
           }
-          else if (i === 10) {
+          else if (itemCount === 11) {
             hours = item;
           }
-          else if (i === 11) {
+          else if (itemCount === 12) {
             mgr = item;
           }
-          else if (i === 12) {
+          else if (itemCount === 13) {
             //rej comments
           }
-          else if (i === 13) {
+          else if (itemCount === 14) {
             //export date 1
           }
-          else if (i === 14) {
-            //export date 2
-          }
-          else if (i === 15) {
-            //creation date
-          }
-          else if (i === 16) {
+          else if (itemCount === 15) {
             week = item;
           }
-          else if (i === 17) {
+          else if (itemCount === 16) {
+            //creation date
+          }
+          else if (itemCount === 17) {
+            submitDate=item;
+          }
+          else if (itemCount === 18) {
+            //Approval
+          }
+          else if (itemCount === 19) {
             //last edit
           }
-          else if (i === 18) {
-            //country code
-          }
-          else if (i === 19) {
+          else if (itemCount === 20) {
             //country
           }
-          else if (i === 20) {
-            submitDate = item;
-          }
 
-          i++;
+          itemCount++;
         });
 
         if (name === 'User') header = true;
@@ -491,4 +489,48 @@ function deltaDate(dateFrom, dateTo){
 
   let delta=365*(yyyyTo-yyyyFrom)+30*(mmTo-mmFrom)+ddTo-ddFrom;
   return delta;
+}
+
+function parseCSV(str) {
+  let arr = [];
+  let quote = false;  // true means we're inside a quoted field
+
+  // iterate over each character, keep track of current row and column (of the returned array)
+  let col = 0;
+
+  for (let c = 0; c < str.length; c++) {
+    let cc = str[c], nc = str[c+1];        // current character, next character
+    arr[col] = arr[col] || '';   // create a new column (start with empty string) if necessary
+
+    // If the current character is a quotation mark, and we're inside a
+    // quoted field, and the next character is also a quotation mark,
+    // add a quotation mark to the current column and skip the next character
+    if (cc === '"' && quote && nc === '"') { arr[col] += cc; ++c; continue; }
+
+    // If it's just one quotation mark, begin/end quoted field
+    if (cc === '"') { quote = !quote; continue; }
+
+    // If it's a comma and we're not in a quoted field, move on to the next column
+    if (cc === ',' && !quote) { ++col; continue; }
+
+    // If it's a newline (CRLF) and we're not in a quoted field,
+    // end parsing the line
+    if (cc === '\r' && nc === '\n' && !quote) { break; }
+
+    // If it's a newline (LF or CR) and we're not in a quoted field,
+    // end parsing this line (separated from above in case we want to handle separately later)
+    if (cc === '\n' && !quote) { break; }
+    if (cc === '\r' && !quote) { break; }
+
+    // Otherwise, append the current character to the current column
+    arr[col] += cc;
+  }
+  return arr;
+}
+
+function oldParse(str){
+  str = str.replace(/","/g,"^");  //change <","> to <^>
+  str = str.replace(/"/g,"");       //remove <">
+
+  return  str.split('^');  //split on <^>
 }
