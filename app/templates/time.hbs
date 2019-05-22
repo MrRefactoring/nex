@@ -10,6 +10,7 @@
   {{#paper-button raised=true primary=true onClick=(action 'setType' 'MONTH')}}by Month{{/paper-button}}
   {{#paper-button raised=true primary=true onClick=(action 'setType' 'WEEK')}}by Week{{/paper-button}}
   {{#paper-button raised=true primary=true onClick=(action 'setType' 'DAY')}}by Day{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setType' 'BLOCK')}}by Block{{/paper-button}}
   <br>
   {{#if (eq type 'WEEK')}}
     Report Week:
@@ -34,6 +35,28 @@
       }}
         {{item}}
       {{/paper-select}}&emsp;
+
+  {{else if (eq type 'BLOCK')}}
+   Month Block:
+      {{#paper-select
+        label="Start Month"
+        selected=startMonth
+        options=monthList
+        onChange=(action (mut startMonth))
+      as |item|
+      }}
+        {{item}}
+      {{/paper-select}}&emsp;
+
+     {{#paper-select
+       label="End Month"
+       selected=endMonth
+       options=monthList
+       onChange=(action (mut endMonth))
+     as |item|
+     }}
+       {{item}}
+     {{/paper-select}}&emsp;
 
   {{else if (eq type 'DAY')}}
     Report Day:
@@ -122,6 +145,13 @@
       <h2>Missing Time Monthly Report&emsp; Month: {{searchMonth}}</h2>
     {{else}}
       <h2>Timecard Monthly Report&emsp; Month: {{searchMonth}}</h2>
+    {{/if}}
+
+  {{else if (eq type 'BLOCK')}}
+    {{#if update}}
+      <h2>Missing Time Monthly Block Report&emsp; Start Month: {{startMonth}} End Month: {{endMonth}}</h2>
+    {{else}}
+      <h2>Timecard Monthly Block Report&emsp; Start Month: {{startMonth}} End Month: {{endMonth}}</h2>
     {{/if}}
 
   {{else if (eq type 'DAY')}}

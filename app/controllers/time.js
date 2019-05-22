@@ -22,6 +22,8 @@ export default Controller.extend(FileSaverMixin, {
   csvOutput:'',
   searchWeek:'01/07/2019 - 01/13/2019',
   searchMonth:1,
+  startMonth:1,
+  endMonth:1,
   mmSearch:'01',
   ddSearch:'01',
   yyyySearch:2019,
@@ -59,7 +61,7 @@ export default Controller.extend(FileSaverMixin, {
           '21','22','23','24','25','26','27','28','29','30','31'],
   yyyyList:[2018,2019,2020],
   units:['ALL','Unit 1 - RF','Unit 2 - AS','Unit 5 - JI'],
-  update: computed('searchWeek', 'searchMonth', 'searchDate','yyyySearch','mgr',
+  update: computed('searchWeek', 'searchMonth', 'searchDate','yyyySearch','mgr', 'startMonth', 'endMonth',
     'shortOnly', 'hideDisabled', 'excludePartial', 'type', 'unitFilter', function () {
     console.log('Update');
     this.send('filter');
