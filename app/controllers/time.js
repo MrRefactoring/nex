@@ -74,6 +74,9 @@ export default Controller.extend(FileSaverMixin, {
     if (this.get('yyyySearch')===2018) {return this.get('weekList18');}
     else return this.get('weekList19');
   }),
+  blockDelta: computed('startMonth', 'endMonth', function () {
+     return this.get('endMonth')-this.get('startMonth')+1;
+  }),
   actions: {
     exportCSV(){
       this.saveFileAs('nex_'+getTodaySortable()+'.csv', this.get('report.csvReport'), 'text');
@@ -287,7 +290,8 @@ export default Controller.extend(FileSaverMixin, {
         let dateMatch=(byWeek && week===self.get('searchWeek')) ||
           (byDay && date===self.get('searchDate')) ||
           (byYTD && self.get('yyyySearch')===yyyy) ||
-          (byMonth && self.get('searchMonth')===mm && self.get('yyyySearch')===yyyy);
+          (byMonth && self.get('searchMonth')===mm && self.get('yyyySearch')===yyyy) ||
+          (byBlock && self.get('startMonth')<=mm && self.get('endMonth')>=mm && self.get('yyyySearch')===yyyy);
 
         let unitMatch=(self.get('unitFilter')==='ALL' || self.get('unitFilter')===unit);
 
@@ -450,6 +454,18 @@ export default Controller.extend(FileSaverMixin, {
                 }
               }
 
+              else if (self.get('type')==='BLOCK') {
+                let delta=self.get('blockDelta');
+
+                if (parseInt(get(approvedHrs[name])) < 160*delta) {
+                  nameStyle = ' style="color:red"';
+                  partial=true;
+                }
+                else if (parseInt(get(approvedHrs[name])) > 200*delta) {
+                  nameStyle = ' style="color:blue"';
+                }
+              }
+
               else if (self.get('type')==='DAY') {
                 if (parseInt(get(approvedHrs[name])) < 6) {
                   nameStyle = ' style="color:red"';
@@ -509,7 +525,8 @@ export default Controller.extend(FileSaverMixin, {
                   billTot+=get(billedHrs[name]);
                   unpaidTot+=get(unpaid[name]);
 
-                  if (byDay || (byWeek && billDays>4) || (byMonth && billDays>16) || (byYTD && billDays>185)){
+                  if (byDay || (byWeek && billDays>4) || (byMonth && billDays>16) ||
+                    (byYTD && billDays>185) || (byBlock &&  billDays>16*self.get('blockDelta')) ){
                     billDaysTotal = billDaysTotal + billDays;
                     billDaysCount++;
                   }
