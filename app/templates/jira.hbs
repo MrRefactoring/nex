@@ -1,0 +1,38 @@
+<h1>JIRA Candidate Database Filters
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'ESG')}}ESG{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'HR')}}HR{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'Unit2')}}Unit 2{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'Search')}}Search{{/paper-button}}
+</h1>
+{{#if (eq viewType 'ESG')}}
+  <h2>ESG FILTERS</h2>
+  <h3>1) 2019 Active Candidates {{#paper-button raised=true primary=true onClick=(action 'open2019Active')}}Open{{/paper-button}} </h3>
+  <h3>2) Group = NEW{{#paper-button raised=true primary=true onClick=(action 'openNew')}}Open{{/paper-button}} </h3>
+
+  <br>
+  <h2>MAJOR GROUPS</h2>
+  <h3>1) ALL ACTIVE {{#paper-button raised=true primary=true onClick=(action 'openActive')}}Open{{/paper-button}} </h3>
+  <h3>2) ALL UNAVAILABLE {{#paper-button raised=true primary=true onClick=(action 'openUnavailable')}}Open{{/paper-button}} </h3>
+  <h3>3) ALL REJECTED {{#paper-button raised=true primary=true onClick=(action 'openRejected')}}Open{{/paper-button}} </h3>
+  <h3>4) ALL HIRED {{#paper-button raised=true primary=true onClick=(action 'openHired')}}Open{{/paper-button}} </h3>
+
+{{else if (eq viewType 'HR')}}
+
+  <h2>HR FILTERS</h2>
+  <h3>1) Missing Comments {{#paper-button raised=true primary=true onClick=(action 'openMissingComments')}}Open{{/paper-button}} </h3>
+  <h3>2) Screen Not Complete {{#paper-button raised=true primary=true onClick=(action 'openNoScreen')}}Open{{/paper-button}} </h3>
+  <h3>3) Screen Scheduled {{#paper-button raised=true primary=true onClick=(action 'openScreenScheduled')}}Open{{/paper-button}} </h3>
+
+{{else if (eq viewType 'Unit2')}}
+  UNDER CONSTRUCTION
+
+{{else if (eq viewType 'Search')}}
+  <h2>FIND BY SKILL AND EXPERIENCE: &emsp;
+      {{#drop-down title='Group' value=groupFilter list=groupList}}{{/drop-down}}&emsp;
+      {{#drop-down title='Experience' value=expFilter list=expList}}{{/drop-down}}
+  </h2>
+  <h3>All Active: {{#paper-button raised=true primary=true onClick=(action 'openSearchHire')}}Open{{/paper-button}} </h3>
+  <h3>Unit2 Hireable: {{#paper-button raised=true primary=true onClick=(action 'openSearchHire' '2')}}Open{{/paper-button}} </h3>
+
+
+{{/if}}

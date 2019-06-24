@@ -10,6 +10,7 @@ Router.map(function() {
   this.route('index',{'path': '/'});
   this.route('submit');
   this.route('time');
+  this.route('jira');
 });
 
 export default Router;

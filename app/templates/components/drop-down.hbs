@@ -1,0 +1,23 @@
+{{#if onChange}}
+  {{#paper-select
+    label=title
+    selected=value
+    options=list
+    onChange=(action 'onChange')
+  as |item|
+  }}
+    {{item}}
+  {{/paper-select}}
+
+{{else}}
+  {{#paper-select
+    label=title
+    selected=value
+    options=list
+    onChange=(action (mut value))
+  as |item|
+  }}
+    {{item}}
+  {{/paper-select}}
+
+{{/if}}
