@@ -6,33 +6,107 @@
 </h1>
 {{#if (eq viewType 'ESG')}}
   <h2>ESG FILTERS</h2>
-  <h3>1) 2019 Active Candidates {{#paper-button raised=true primary=true onClick=(action 'open2019Active')}}Open{{/paper-button}} </h3>
-  <h3>2) Group = NEW{{#paper-button raised=true primary=true onClick=(action 'openNew')}}Open{{/paper-button}} </h3>
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+    <tr>
+      <td><h3>2019 Active Candidates</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'open2019Active')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>Group = NEW</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openNew')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
 
   <br>
   <h2>MAJOR GROUPS</h2>
-  <h3>1) ALL ACTIVE {{#paper-button raised=true primary=true onClick=(action 'openActive')}}Open{{/paper-button}} </h3>
-  <h3>2) ALL UNAVAILABLE {{#paper-button raised=true primary=true onClick=(action 'openUnavailable')}}Open{{/paper-button}} </h3>
-  <h3>3) ALL REJECTED {{#paper-button raised=true primary=true onClick=(action 'openRejected')}}Open{{/paper-button}} </h3>
-  <h3>4) ALL HIRED {{#paper-button raised=true primary=true onClick=(action 'openHired')}}Open{{/paper-button}} </h3>
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+    <tr>
+      <td><h3>ALL ACTIVE</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openActive')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>ALL UNAVAILABLE</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openUnavailable')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>ALL REJECTED</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openRejected')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>ALL HIRED</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openHired')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
 
 {{else if (eq viewType 'HR')}}
 
-  <h2>HR FILTERS</h2>
-  <h3>1) Missing Comments {{#paper-button raised=true primary=true onClick=(action 'openMissingComments')}}Open{{/paper-button}} </h3>
-  <h3>2) Screen Not Complete {{#paper-button raised=true primary=true onClick=(action 'openNoScreen')}}Open{{/paper-button}} </h3>
-  <h3>3) Screen Scheduled {{#paper-button raised=true primary=true onClick=(action 'openScreenScheduled')}}Open{{/paper-button}} </h3>
+  <h2>HR FILTERS &emsp;{{#drop-down title='Employee' value=hrFilter list=hrList}}{{/drop-down}}</h2>
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+    <tr>
+      <td><h3>HR Screen Missing Comments</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openMissingComments')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>HR Screen Not Completed</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openNoScreen')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>HR Screen Scheduled</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openScreenScheduled')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
 
 {{else if (eq viewType 'Unit2')}}
-  UNDER CONSTRUCTION
+  <h2>UNIT 2 Reports &emsp;{{#drop-down title='Employee' value=mgr2Filter list=mgr2List}}{{/drop-down}}</h2>
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+    <tr>
+      <td><h3>Needs Interview [ACTIVE]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openUnit2Interview')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>Hireable [ACTIVE]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openUnit2Hireable')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
 
 {{else if (eq viewType 'Search')}}
   <h2>FIND BY SKILL AND EXPERIENCE: &emsp;
-      {{#drop-down title='Group' value=groupFilter list=groupList}}{{/drop-down}}&emsp;
+      {{#drop-down title='Group' value=groupFilter list=domainList}}{{/drop-down}}&emsp;
       {{#drop-down title='Experience' value=expFilter list=expList}}{{/drop-down}}
   </h2>
-  <h3>All Active: {{#paper-button raised=true primary=true onClick=(action 'openSearchHire')}}Open{{/paper-button}} </h3>
-  <h3>Unit2 Hireable: {{#paper-button raised=true primary=true onClick=(action 'openSearchHire' '2')}}Open{{/paper-button}} </h3>
-
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+    <tr>
+      <td><h3>All Matching Active Candidates</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openSearchHire')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>All Matching Unit 2 Hireable Candidates</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openSearchHire' 'unit2Hireable')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>All Matching Unit 2 Active Candidates</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openSearchHire' 'unit2Active')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
 
 {{/if}}
