@@ -8,9 +8,12 @@
           Main Menu
         {{/paper-tooltip}}
       {{/paper-button}}
-      <h1>Nexonia Tools (c)2019 Shahman V1.05 June 26
+      <h1>Nexonia Tools (c)2019 Shahman V1.06 July 30
       </h1>
       <span class="flex"></span>
+      {{#paper-button raised=true onClick=(action 'goto' "jira")}}
+        JIRA
+      {{/paper-button}}
       {{#paper-button raised=true onClick=(action 'goto' "time")}}
         Timecard
       {{/paper-button}}

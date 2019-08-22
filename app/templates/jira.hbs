@@ -1,8 +1,10 @@
 <h1>JIRA Candidate Database Filters
-  {{#paper-button raised=true primary=true onClick=(action 'setView' 'ESG')}}ESG{{/paper-button}}
-  {{#paper-button raised=true primary=true onClick=(action 'setView' 'HR')}}HR{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'ESG')}}ALL ESG Searches{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'HR')}}HR Searches{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'Search')}}Search By Skills{{/paper-button}}
   {{#paper-button raised=true primary=true onClick=(action 'setView' 'Unit2')}}Unit 2{{/paper-button}}
-  {{#paper-button raised=true primary=true onClick=(action 'setView' 'Search')}}Search{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'Unit5')}}Unit 5{{/paper-button}}
+  {{#paper-button raised=true primary=true onClick=(action 'setView' 'Stats')}}Stats{{/paper-button}}
 </h1>
 {{#if (eq viewType 'ESG')}}
   <h2>ESG FILTERS</h2>
@@ -16,13 +18,21 @@
       <td>{{#paper-button raised=true primary=true onClick=(action 'open2019Active')}}Open{{/paper-button}}</td>
     </tr>
     <tr>
-      <td><h3>Group = NEW</h3></td>
-      <td>{{#paper-button raised=true primary=true onClick=(action 'openNew')}}Open{{/paper-button}}</td>
+      <td><h3>DOMAIN SKILLS = NEW (ACTIVE)</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openNewActive')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+    <td><h3>LINKED IN (BLANK)</h3></td>
+    <td>{{#paper-button raised=true primary=true onClick=(action 'openBlankLinkedIn')}}Open{{/paper-button}}</td>
+  </tr>
+    <tr>
+      <td><h3>LINKED IN (EXAMPLE.COM)</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openOtherLinkedIn')}}Open{{/paper-button}}</td>
     </tr>
   </table>
 
   <br>
-  <h2>MAJOR GROUPS</h2>
+  <h2>MAJOR GROUPS &emsp;{{#drop-down title='Year' value=yearFilter list=yearList}}{{/drop-down}}</h2>
   <table style="width:50%">
     <tr>
       <th style="width:85%">Report</th>
@@ -66,6 +76,22 @@
       <td><h3>HR Screen Scheduled</h3></td>
       <td>{{#paper-button raised=true primary=true onClick=(action 'openScreenScheduled')}}Open{{/paper-button}}</td>
     </tr>
+    <tr>
+      <td><h3>HR Screen Completed [in NEWTON but not JIRA]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openScreenCompletedNewton')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>HR Screen Completed [with Screen Notes]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openScreenCompletedNotesJira')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>HR Screen Completed [with or without Screen Notes]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openScreenCompletedJira')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>Missing "HR Screen By"</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'missingHRScreenBy')}}Open{{/paper-button}}</td>
+    </tr>
   </table>
 
 {{else if (eq viewType 'Unit2')}}
@@ -83,11 +109,40 @@
       <td><h3>Hireable [ACTIVE]</h3></td>
       <td>{{#paper-button raised=true primary=true onClick=(action 'openUnit2Hireable')}}Open{{/paper-button}}</td>
     </tr>
+    <tr>
+      <td><h3>Unit 2 NOT Rejected [ESG ACTIVE]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openActiveUnit2NotRej')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>Unit 2 Rejected BCA [ESG ACTIVE]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openActiveUnit2RejBCA')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>Unit 2 Rejected [ESG ACTIVE]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openActiveUnit2Rej')}}Open{{/paper-button}}</td>
+    </tr>
+
   </table>
+
+{{else if (eq viewType 'Unit5')}}
+  <h2>UNIT 2 Reports &emsp;{{#drop-down title='Employee' value=mgr2Filter list=mgr5List}}{{/drop-down}}</h2>
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+
+    <tr>
+      <td><h3>Needs Interview [ACTIVE]</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openUnit5Interview')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
+  <h1>UNDER CONSTRUCTION</h1>
+  Feel free to propose custom searches to aneil.shah@esg-usa.com
 
 {{else if (eq viewType 'Search')}}
   <h2>FIND BY SKILL AND EXPERIENCE: &emsp;
-      {{#drop-down title='Group' value=groupFilter list=domainList}}{{/drop-down}}&emsp;
+      {{#drop-down title='Domain Skills' value=groupFilter list=domainList}}{{/drop-down}}&emsp;
       {{#drop-down title='Experience' value=expFilter list=expList}}{{/drop-down}}
   </h2>
   <table style="width:50%">
@@ -104,8 +159,27 @@
       <td>{{#paper-button raised=true primary=true onClick=(action 'openSearchHire' 'unit2Hireable')}}Open{{/paper-button}}</td>
     </tr>
     <tr>
-      <td><h3>All Matching Unit 2 Active Candidates</h3></td>
+      <td><h3>All Matching Unit 2 Non-Rejected Candidates</h3></td>
       <td>{{#paper-button raised=true primary=true onClick=(action 'openSearchHire' 'unit2Active')}}Open{{/paper-button}}</td>
+    </tr>
+  </table>
+
+{{else if (eq viewType 'Stats')}}
+  <h2>OPERATING STATS
+      {{#drop-down title='Year' value=yearFilter list=yearList}}{{/drop-down}}&emsp;
+    {{#drop-down title='Qtr' value=qtrFilter list=qtrList}}{{/drop-down}}</h2>
+  <table style="width:50%">
+    <tr>
+      <th style="width:85%">Report</th>
+      <th style="width:15%">Action</th>
+    </tr>
+    <tr>
+      <td><h3>Active Candidates by QTR</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openActiveQtr')}}Open{{/paper-button}}</td>
+    </tr>
+    <tr>
+      <td><h3>ALL Candidates by QTY</h3></td>
+      <td>{{#paper-button raised=true primary=true onClick=(action 'openAllQtr')}}Open{{/paper-button}}</td>
     </tr>
   </table>
 

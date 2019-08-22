@@ -11,6 +11,7 @@ Router.map(function() {
   this.route('submit');
   this.route('time');
   this.route('jira');
+  this.route('jira-test');
 });
 
 export default Router;
